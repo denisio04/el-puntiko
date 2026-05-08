@@ -154,6 +154,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      if (usedBonus === true) {
+        await tx.user.update({
+          where: { id: auth.user.id },
+          data: { lastBonusUsedAt: new Date(), bonusProductsUsed: 0 },
+        });
+      }
+
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
