@@ -1,0 +1,38 @@
+import { NextResponse } from "next/server";
+import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
+import { prisma } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth) return adminUnauthorized();
+  try {
+    const topProducts = await prisma.orderItem.groupBy({
+      by: ["productId"],
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: 5,
+    });
+
+    const productsWithDetails = await Promise.all(
+      topProducts.map(async (item) => {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+          select: { name: true, image: true },
+        });
+        return {
+          productId: item.productId,
+          name: product?.name || "Producto eliminado",
+          image: product?.image,
+          totalSold: item._sum.quantity || 0,
+        };
+      })
+    );
+
+    return NextResponse.json(productsWithDetails);
+  } catch (error) {
+    console.error("Error fetching top products:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}

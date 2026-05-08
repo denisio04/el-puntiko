@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String?  @unique
+  password  String
+  name      String?
+  phone     String?
+  address   String?
+  ci        String?  @unique
+  role      String   @default("CUSTOMER")
+  wallet    Float    @default(0)
+  lastBonusUsedAt DateTime?
+  bonusProductsUsed Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  affiliateProfile  AffiliateProfile?
+  deliveryProfile   DeliveryProfile?
+  supplierProducts  Product[]         @relation("SupplierProducts")
+  ordersAsCustomer  Order[]           @relation("CustomerOrders")
+  ordersAsStaff     Order[]           @relation("StaffOrders")
+  ordersAsDelivery  Order[]          @relation("DeliveryOrders")
+  transactions      WalletTransaction[] @relation("UserTransactions")
+
+  @@index([ci])
+  @@index([role])
+  @@map("users")
+}
+
+model AffiliateProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  code           String   @unique
+  commissionRate Float    @default(0.10)
+  pendingBalance Float   @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([code])
+  @@map("affiliate_profiles")
+}
+
+model DeliveryProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  commissionRate  Float    @default(0.20)
+  pendingBalance  Float    @default(0)
+  totalDeliveries Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_profiles")
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  price        Float
+  purchasePrice Float?
+  comparePrice Float?
+  image        String?
+  imageId     String?
+  stock       Int      @default(0)
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supplierId String?
+  supplier   User?    @relation("SupplierProducts", fields: [supplierId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([isActive])
+  @@index([supplierId])
+  @@map("products")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  image     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique
+  customerName    String
+  customerPhone String
+  customerAddress String
+  notes           String?
+  subtotal        Float
+  total           Float
+  status          String   @default("PENDING")
+  usedBonus      Boolean  @default(false)
+  customerId      String?
+  staffId         String?
+  deliveryId      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer    User?             @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: SetNull)
+  staff       User?             @relation("StaffOrders", fields: [staffId], references: [id], onDelete: SetNull)
+  delivery    User?             @relation("DeliveryOrders", fields: [deliveryId], references: [id], onDelete: SetNull)
+  items       OrderItem[]
+  transactions WalletTransaction[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([staffId])
+  @@index([deliveryId])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  productId     String
+  quantity     Int
+  price         Float
+  purchasePrice Float?
+  affiliateId   String?
+
+  order      Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product          @relation(fields: [productId], references: [id])
+  affiliate  AffiliateProfile? @relation(fields: [affiliateId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([affiliateId])
+  @@map("order_items")
+}
+
+model WalletTransaction {
+  id          String   @id @default(cuid())
+  userId      String?
+  amount      Float
+  type        String
+  description String?
+  orderId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User?   @relation("UserTransactions", fields: [userId], references: [id], onDelete: SetNull)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([type])
+  @@index([orderId])
+  @@map("wallet_transactions")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires   DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Settings {
+  id                    String  @id @default("global")
+  affiliateCommissionRate Float   @default(0.10)
+  deliveryCommissionRate Float  @default(0.20)
+  updatedAt             DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model BonusConfig {
+  id               String   @id @default("global")
+  requiredOrders   Int      @default(5)
+  requiredProducts Int      @default(1)
+  discountPercent  Float    @default(0.10)
+  targetType       String   @default("ALL") // ALL, PRODUCTS, CATEGORIES
+  targetIds        String   @default("[]") // JSON array stored as string
+  isActive         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("bonus_config")
+}
