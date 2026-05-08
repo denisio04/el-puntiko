@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Trash2,
@@ -42,13 +42,19 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [notes, setNotes] = useState("");
   const [bonus, setBonus] = useState<BonusProgress | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     fetch("/api/bonus/progress")
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         console.log("Bonus API response:", data);
-        if (data && data.isActive && data.hasReached && data.discountPercent > 0) {
+        if (
+          data &&
+          data.isActive &&
+          data.hasReached &&
+          data.discountPercent > 0
+        ) {
           setBonus(data);
         }
       })
@@ -171,8 +177,8 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
-      <div className="flex items-center gap-4 mb-12">
+    <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.back()}
           className="p-2 hover:bg-black hover:text-white border border-black"
@@ -183,14 +189,14 @@ export default function CheckoutPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 border border-red-600 bg-red-50 text-red-600">
+        <div className="mb-3 p-4 border border-red-600 bg-red-50 text-red-600">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h2 className="text-2xl font-black uppercase mb-6">
+          <h2 className="text-2xl font-black uppercase mb-3">
             Datos del pedido
           </h2>
 
@@ -231,7 +237,11 @@ export default function CheckoutPage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+              id="checkout-form"
+              onSubmit={handleSubmit}
+              className="space-y-6"
+            >
               <div className="border border-black p-4 space-y-4">
                 <h3 className="text-lg font-black uppercase border-b border-black pb-2">
                   Datos del cliente
@@ -302,24 +312,6 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                disabled={
-                  loading || !customerName || !customerPhone || !customerAddress
-                }
-              >
-                {loading ? (
-                  "Procesando..."
-                ) : (
-                  <>
-                    <Send className="w-5 h-5 mr-3" />
-                    CONFIRMAR PEDIDO
-                  </>
-                )}
-              </Button>
-
               {(!customerName || !customerPhone || !customerAddress) && (
                 <p className="text-sm text-center text-gray-500">
                   Completa tus datos en tu perfil para poder confirmar el pedido
@@ -330,14 +322,14 @@ export default function CheckoutPage() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-black uppercase mb-6">Tu pedido</h2>
+          <h2 className="text-2xl font-black uppercase mb-3">Tu pedido</h2>
           <div className="border border-black">
             {items.map((item) => (
               <div
                 key={item.id}
                 className="flex justify-between items-center p-4 border-b border-black last:border-b-0"
               >
-                <div>
+                <div className="flex flex-col gap-1">
                   <p className="font-black uppercase">{item.name}</p>
                   <p className="text-sm">Cantidad: {item.quantity}</p>
                   {bonus && bonus.hasReached && item.isBonusProduct && (
@@ -347,37 +339,41 @@ export default function CheckoutPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={item.isBonusProduct}
-                    className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
-                  >
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <span className="w-8 text-center font-medium">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    disabled={item.isBonusProduct}
-                    className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
-                  <p className="text-lg ml-2">
-                    $
-                    {(bonus && bonus.hasReached && item.isBonusProduct
-                      ? item.price * (1 - bonus.discountPercent)
-                      : item.price * item.quantity
-                    ).toFixed(2)}
-                  </p>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="p-2 hover:bg-black hover:text-white ml-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg">
+                      $
+                      {(bonus && bonus.hasReached && item.isBonusProduct
+                        ? item.price * (1 - bonus.discountPercent)
+                        : item.price * item.quantity
+                      ).toFixed(2)}
+                    </p>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="p-2 hover:bg-black hover:text-white"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-0">
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      disabled={item.isBonusProduct}
+                      className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-8 text-center font-medium">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      disabled={item.isBonusProduct}
+                      className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -407,6 +403,25 @@ export default function CheckoutPage() {
               )}
             </div>
           </div>
+
+          <Button
+            type="submit"
+            form="checkout-form"
+            size="lg"
+            className="w-full mt-6"
+            disabled={
+              loading || !customerName || !customerPhone || !customerAddress
+            }
+          >
+            {loading ? (
+              "Procesando..."
+            ) : (
+              <>
+                <Send className="w-5 h-5 mr-3" />
+                CONFIRMAR PEDIDO
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
