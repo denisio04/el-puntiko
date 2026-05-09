@@ -163,7 +163,9 @@ export default function AdminPage() {
           className="block border-2 border-black p-6 hover:bg-black hover:text-white transition-colors"
         >
           <h2 className="text-xl font-bold mb-2">Pagos a Trabajadores</h2>
-          <p className="text-sm">Pagar a afiliados, suppliers, delivery y staff</p>
+          <p className="text-sm">
+            Pagar a afiliados, suppliers, delivery y staff
+          </p>
         </Link>
 
         <Link
@@ -187,7 +189,9 @@ export default function AdminPage() {
           className="block border-2 border-black p-6 hover:bg-black hover:text-white transition-colors"
         >
           <h2 className="text-xl font-bold mb-2">Configuración</h2>
-          <p className="text-sm">Comisiones de afiliados y delivery</p>
+          <p className="text-sm">
+            Configutaciones de afiliados, delivery y staff
+          </p>
         </Link>
 
         <button

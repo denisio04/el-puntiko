@@ -4,12 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useSession } from "next-auth/react";
-import { X, Settings as SettingsIcon, Percent } from "lucide-react";
+import { X, Settings as SettingsIcon, Percent, Phone } from "lucide-react";
+
+interface Staff {
+  id: string;
+  name: string | null;
+  phone: string | null;
+}
 
 interface Settings {
   id: string;
   affiliateCommissionRate: number;
   deliveryCommissionRate: number;
+  contactStaffId: string | null;
+  contactPhone: string | null;
 }
 
 async function getSettings(): Promise<Settings | null> {
@@ -22,14 +30,31 @@ async function getSettings(): Promise<Settings | null> {
   }
 }
 
+async function getStaff(): Promise<Staff[]> {
+  try {
+    const res = await fetch("/api/admin/staff");
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
 async function updateSettings(
   affiliateCommissionRate: number,
-  deliveryCommissionRate: number
+  deliveryCommissionRate: number,
+  contactStaffId: string | null,
+  contactPhone: string | null,
 ): Promise<Settings> {
   const res = await fetch("/api/admin/settings", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ affiliateCommissionRate, deliveryCommissionRate }),
+    body: JSON.stringify({
+      affiliateCommissionRate,
+      deliveryCommissionRate,
+      contactStaffId,
+      contactPhone,
+    }),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -40,7 +65,7 @@ async function updateSettings(
 
 async function applyToAll(
   affiliateCommissionRate: number,
-  deliveryCommissionRate: number
+  deliveryCommissionRate: number,
 ): Promise<{ success: boolean }> {
   const res = await fetch("/api/admin/settings/apply-all", {
     method: "POST",
@@ -68,9 +93,13 @@ export default function AdminSettingsPage() {
 
   const [affiliateRate, setAffiliateRate] = useState("10");
   const [deliveryRate, setDeliveryRate] = useState("20");
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [contactStaffId, setContactStaffId] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const isAuthed =
-    isAuthenticated || (status === "authenticated" && session?.user?.role === "ADMIN");
+    isAuthenticated ||
+    (status === "authenticated" && session?.user?.role === "ADMIN");
 
   useEffect(() => {
     setMounted(true);
@@ -80,19 +109,19 @@ export default function AdminSettingsPage() {
     if (!mounted) return;
     if (!isAuthed) {
       router.push("/login?from=/admin/settings");
+      return;
     }
-  }, [isAuthed, router, mounted]);
-
-  useEffect(() => {
-    if (!user?.id || !mounted) return;
-    getSettings().then((data) => {
+    Promise.all([getSettings(), getStaff()]).then(([data, staffData]) => {
       if (data) {
         setSettings(data);
         setAffiliateRate((data.affiliateCommissionRate * 100).toString());
         setDeliveryRate((data.deliveryCommissionRate * 100).toString());
+        setContactStaffId(data.contactStaffId || "");
+        setContactPhone(data.contactPhone || "");
       }
+      setStaff(staffData);
     });
-  }, [user?.id, mounted]);
+  }, [isAuthed, mounted, router]);
 
   const handleSave = async () => {
     setError("");
@@ -111,7 +140,12 @@ export default function AdminSettingsPage() {
 
     setSaving(true);
     try {
-      const updated = await updateSettings(affiliateNum / 100, deliveryNum / 100);
+      const updated = await updateSettings(
+        affiliateNum / 100,
+        deliveryNum / 100,
+        contactStaffId || null,
+        contactPhone || null,
+      );
       setSettings(updated);
       setShowSuccess(true);
     } catch (e) {
@@ -216,6 +250,61 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
+          <div className="border-2 border-black p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Phone className="w-5 h-5" />
+              <h2 className="text-lg font-bold">CONTACTO WHATSAPP</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Seleccionar Staff
+                </label>
+                <select
+                  value={contactStaffId}
+                  onChange={(e) => {
+                    setContactStaffId(e.target.value);
+                    if (e.target.value) setContactPhone("");
+                  }}
+                  className="w-full px-4 py-3 border-2 border-black font-medium bg-white"
+                >
+                  <option value="">-- Seleccionar staff --</option>
+                  {staff.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name || s.id}{" "}
+                      {s.phone ? `(${s.phone})` : "(sin teléfono)"}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-gray-500 mt-2">
+                  Usa el teléfono del staff seleccionado
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="flex">
+                  <div className="mx-4 my-2  text-gray-500 font-medium">
+                    +53
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="Ingresa número manual"
+                    value={contactPhone}
+                    onChange={(e) => {
+                      setContactPhone(e.target.value);
+                      if (e.target.value) setContactStaffId("");
+                    }}
+                    className="w-1/2 pl-4 pr-4 py-1 border-2 border-black font-medium"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  O ingresa un número manualmente (sin +53)
+                </p>
+              </div>
+            </div>
+          </div>
+
           {error && (
             <div className="border-2 border-red-500 bg-red-50 p-4">
               <p className="text-red-600 font-medium">{error}</p>
@@ -255,7 +344,9 @@ export default function AdminSettingsPage() {
               <div className="w-16 h-16 mx-auto mb-4 bg-black text-white rounded-full flex items-center justify-center">
                 <span className="text-3xl">✓</span>
               </div>
-              <h2 className="text-2xl font-black mb-2">CONFIGURACIÓN GUARDADA</h2>
+              <h2 className="text-2xl font-black mb-2">
+                CONFIGURACIÓN GUARDADA
+              </h2>
               <p className="text-gray-600 mb-6">
                 Los cambios se han aplicado correctamente.
               </p>
@@ -276,8 +367,8 @@ export default function AdminSettingsPage() {
             <div className="p-6">
               <h2 className="text-xl font-black mb-4">CONFIRMAR</h2>
               <p className="text-gray-600 mb-6">
-                Esto aplicará las tasas configuradas a TODOS los afiliados y delivery existentes.
-                ¿Continuar?
+                Esto aplicará las tasas configuradas a TODOS los afiliados y
+                delivery existentes. ¿Continuar?
               </p>
               <div className="flex gap-2">
                 <button

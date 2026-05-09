@@ -6,6 +6,7 @@ import { ShoppingCart, Search, X, User, LogOut, UserPlus } from "lucide-react";
 import { useCartStore } from "@/stores/useCartStore";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback, Suspense } from "react";
+import { WhatsAppNavButton } from "@/components/ui/WhatsAppNavButton";
 
 function useCurrentPath() {
   const pathname = usePathname();
@@ -34,12 +35,15 @@ function NavigationContent({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  const handleSearch = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchValue.trim()) {
-      router.push(`/?search=${encodeURIComponent(searchValue.trim())}`);
-    }
-  }, [searchValue, router]);
+  const handleSearch = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (searchValue.trim()) {
+        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`);
+      }
+    },
+    [searchValue, router],
+  );
 
   const clearSearch = () => {
     setSearchValue("");
@@ -50,7 +54,9 @@ function NavigationContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchValue.trim()) {
-        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`, { scroll: false });
+        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`, {
+          scroll: false,
+        });
       } else if (window.location.search.includes("search=")) {
         router.push("/", { scroll: false });
       }
@@ -86,12 +92,15 @@ function NavigationLinks({ currentPath }: { currentPath: string }) {
     setMounted(true);
   }, []);
 
-  const handleSearch = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchValue.trim()) {
-      router.push(`/?search=${encodeURIComponent(searchValue.trim())}`);
-    }
-  }, [searchValue, router]);
+  const handleSearch = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (searchValue.trim()) {
+        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`);
+      }
+    },
+    [searchValue, router],
+  );
 
   const clearSearch = () => {
     setSearchValue("");
@@ -102,7 +111,9 @@ function NavigationLinks({ currentPath }: { currentPath: string }) {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchValue.trim()) {
-        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`, { scroll: false });
+        router.push(`/?search=${encodeURIComponent(searchValue.trim())}`, {
+          scroll: false,
+        });
       } else if (window.location.search.includes("search=")) {
         router.push("/", { scroll: false });
       }
@@ -114,7 +125,10 @@ function NavigationLinks({ currentPath }: { currentPath: string }) {
   return (
     <>
       {isAuthenticated ? (
-        <Link href="/admin" className="text-2xl md:text-3xl font-black tracking-tighter shrink-0 hover:opacity-70">
+        <Link
+          href="/admin"
+          className="text-2xl md:text-3xl font-black tracking-tighter shrink-0 hover:opacity-70"
+        >
           EL PUNTIKO.
         </Link>
       ) : (
@@ -125,7 +139,7 @@ function NavigationLinks({ currentPath }: { currentPath: string }) {
           EL PUNTIKO.
         </button>
       )}
-      
+
       <div className="flex items-center gap-2">
         {searchOpen ? (
           <form onSubmit={handleSearch} className="relative flex items-center">
@@ -160,43 +174,73 @@ function NavigationLinks({ currentPath }: { currentPath: string }) {
             <Search className="w-5 md:w-6 h-5 md:h-6" />
           </button>
         )}
-        
+
         {isAuthenticated ? (
           <>
             {user?.role === "ADMIN" && (
-              <Link href="/admin" className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Panel admin">
+              <Link
+                href="/admin"
+                className="p-2 hover:bg-black hover:text-white transition-colors"
+                aria-label="Panel admin"
+              >
                 <User className="w-5 md:w-6 h-5 md:h-6" />
               </Link>
             )}
             {user?.role === "AFFILIATE" && (
-              <Link href="/afiliado" className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Panel afiliado">
+              <Link
+                href="/afiliado"
+                className="p-2 hover:bg-black hover:text-white transition-colors"
+                aria-label="Panel afiliado"
+              >
                 <User className="w-5 md:w-6 h-5 md:h-6" />
               </Link>
             )}
             {user?.role === "STAFF" && (
-              <Link href="/staff" className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Panel staff">
+              <Link
+                href="/staff"
+                className="p-2 hover:bg-black hover:text-white transition-colors"
+                aria-label="Panel staff"
+              >
                 <User className="w-5 md:w-6 h-5 md:h-6" />
               </Link>
             )}
             {user?.role === "DELIVERY" && (
-              <Link href="/delivery" className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Panel delivery">
+              <Link
+                href="/delivery"
+                className="p-2 hover:bg-black hover:text-white transition-colors"
+                aria-label="Panel delivery"
+              >
                 <User className="w-5 md:w-6 h-5 md:h-6" />
               </Link>
             )}
             {user?.role === "SUPPLIER" && (
-              <Link href="/supplier" className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Panel proveedor">
+              <Link
+                href="/supplier"
+                className="p-2 hover:bg-black hover:text-white transition-colors"
+                aria-label="Panel proveedor"
+              >
                 <User className="w-5 md:w-6 h-5 md:h-6" />
               </Link>
             )}
             {user?.role === "CUSTOMER" && (
-              <Link href="/perfil" className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Mi perfil">
+              <Link
+                href="/perfil"
+                className="p-2 hover:bg-black hover:text-white transition-colors"
+                aria-label="Mi perfil"
+              >
                 <User className="w-5 md:w-6 h-5 md:h-6" />
               </Link>
             )}
-            <Link href="/checkout" className="p-2 hover:bg-black hover:text-white transition-colors flex items-center gap-2">
+            <WhatsAppNavButton />
+            <Link
+              href="/checkout"
+              className="p-2 hover:bg-black hover:text-white transition-colors flex items-center gap-2"
+            >
               <ShoppingCart className="w-5 md:w-6 h-5 md:h-6" />
               {mounted && itemCount > 0 && (
-                <span className="text-xs md:text-sm font-bold">{itemCount}</span>
+                <span className="text-xs md:text-sm font-bold">
+                  {itemCount}
+                </span>
               )}
             </Link>
             <button
@@ -211,16 +255,30 @@ function NavigationLinks({ currentPath }: { currentPath: string }) {
           </>
         ) : (
           <div className="flex items-center gap-1">
-            <Link href={`/login?from=${encodeURIComponent(currentPath)}`} className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Iniciar sesión">
+            <Link
+              href={`/login?from=${encodeURIComponent(currentPath)}`}
+              className="p-2 hover:bg-black hover:text-white transition-colors"
+              aria-label="Iniciar sesión"
+            >
               <User className="w-5 md:w-6 h-5 md:h-6" />
             </Link>
-            <Link href={`/registro?from=${encodeURIComponent(currentPath)}`} className="p-2 hover:bg-black hover:text-white transition-colors" aria-label="Registrarse">
+            <Link
+              href={`/registro?from=${encodeURIComponent(currentPath)}`}
+              className="p-2 hover:bg-black hover:text-white transition-colors"
+              aria-label="Registrarse"
+            >
               <UserPlus className="w-5 md:w-6 h-5 md:h-6" />
             </Link>
-            <Link href="/checkout" className="p-2 hover:bg-black hover:text-white transition-colors flex items-center gap-2">
+            <WhatsAppNavButton />
+            <Link
+              href="/checkout"
+              className="p-2 hover:bg-black hover:text-white transition-colors flex items-center gap-2"
+            >
               <ShoppingCart className="w-5 md:w-6 h-5 md:h-6" />
               {mounted && itemCount > 0 && (
-                <span className="text-xs md:text-sm font-bold">{itemCount}</span>
+                <span className="text-xs md:text-sm font-bold">
+                  {itemCount}
+                </span>
               )}
             </Link>
           </div>
@@ -238,6 +296,10 @@ function NavigationWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <NavigationWrapper>{children}</NavigationWrapper>;
 }
