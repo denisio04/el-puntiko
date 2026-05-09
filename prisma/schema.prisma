@@ -196,6 +196,8 @@ model Settings {
   id                    String  @id @default("global")
   affiliateCommissionRate Float   @default(0.10)
   deliveryCommissionRate Float  @default(0.20)
+  contactStaffId        String?
+  contactPhone          String?
   updatedAt             DateTime @updatedAt
 
   @@map("settings")

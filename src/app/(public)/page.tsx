@@ -95,10 +95,18 @@ export default async function HomePage({ searchParams }: Props) {
                 <Link
                   key={category.id}
                   href={`/categoria/${category.slug}`}
-                  className="block border-2 border-black hover:bg-black hover:text-white transition-colors"
+                  className="flex flex-row h-20 md:h-auto md:block border-2 border-black hover:bg-black hover:text-white transition-colors"
                 >
-                  {category.image ? (
-                    <div className="aspect-square relative bg-gray-100">
+                  <div className="w-1/2 md:w-auto md:bg-transparent bg-black text-white md:text-black flex flex-col justify-center items-start px-2 py-4 md:p-0">
+                    <h2 className="font-black uppercase text-center text-lg md:text-xl leading-tight">
+                      {category.name}
+                    </h2>
+                    <p className="text-xs text-center mt-1 md:mt-0 md:text-xs">
+                      {catProducts.length} productos
+                    </p>
+                  </div>
+                  <div className="w-1/2 md:w-auto relative md:aspect-square bg-gray-100">
+                    {category.image ? (
                       <Image
                         src={category.image}
                         alt={category.name}
