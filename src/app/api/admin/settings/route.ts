@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { affiliateCommissionRate, deliveryCommissionRate } = body;
+    const { affiliateCommissionRate, deliveryCommissionRate, contactStaffId, contactPhone } = body;
 
     if (
       typeof affiliateCommissionRate !== "number" ||
@@ -72,16 +72,23 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const updateData: Record<string, unknown> = {
+      affiliateCommissionRate,
+      deliveryCommissionRate,
+    };
+
+    if (contactStaffId !== undefined) updateData.contactStaffId = contactStaffId || null;
+    if (contactPhone !== undefined) updateData.contactPhone = contactPhone || null;
+
     const settings = await prisma.settings.upsert({
       where: { id: "global" },
-      update: {
-        affiliateCommissionRate,
-        deliveryCommissionRate,
-      },
+      update: updateData,
       create: {
         id: "global",
         affiliateCommissionRate,
         deliveryCommissionRate,
+        contactStaffId: contactStaffId || null,
+        contactPhone: contactPhone || null,
       },
     });
 

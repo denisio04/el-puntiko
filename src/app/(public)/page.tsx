@@ -35,10 +35,13 @@ export default async function HomePage({ searchParams }: Props) {
     orderBy: { createdAt: "desc" },
   });
 
-  const productsByCategory = categories.reduce<Record<string, Product[]>>((acc, cat) => {
-    acc[cat.name] = products.filter((p) => p.category === cat.name);
-    return acc;
-  }, {});
+  const productsByCategory = categories.reduce<Record<string, Product[]>>(
+    (acc, cat) => {
+      acc[cat.name] = products.filter((p) => p.category === cat.name);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -58,7 +61,9 @@ export default async function HomePage({ searchParams }: Props) {
       <section className="py-8 md:py-12 px-4 md:px-6">
         {searchQuery ? (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Resultados: &ldquo;{searchQuery}&rdquo;</h2>
+            <h2 className="text-2xl font-bold mb-6">
+              Resultados: &ldquo;{searchQuery}&rdquo;
+            </h2>
             {products.length === 0 ? (
               <p className="text-gray-500">No se encontraron productos</p>
             ) : (
@@ -79,50 +84,77 @@ export default async function HomePage({ searchParams }: Props) {
                         />
                       </div>
                     )}
-                    <h3 className="font-bold text-xs md:text-base line-clamp-2">{product.name}</h3>
-                    <p className="font-black mt-1">${product.price.toFixed(2)}</p>
+                    <h3 className="font-bold text-xs md:text-base line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <p className="font-black mt-1">
+                      ${product.price.toFixed(2)}
+                    </p>
                   </Link>
                 ))}
               </div>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {categories.map((cat) => {
-              const category = cat as { id: string; name: string; slug: string; image?: string | null };
+              const category = cat as {
+                id: string;
+                name: string;
+                slug: string;
+                image?: string | null;
+              };
               const catProducts = productsByCategory[category.name] || [];
+              const isAccesorios = category.slug === "accesorios";
               return (
                 <Link
                   key={category.id}
                   href={`/categoria/${category.slug}`}
-                  className="flex flex-row h-20 md:h-auto md:block border-2 border-black hover:bg-black hover:text-white transition-colors"
+                  className={`flex flex-row h-20 md:h-auto md:block ${isAccesorios ? "relative" : "border border-black"} hover:bg-black hover:text-white transition-colors`}
                 >
-                  <div className="w-1/2 md:w-auto md:bg-transparent bg-black text-white md:text-black flex flex-col justify-center items-start px-2 py-4 md:p-0">
-                    <h2 className="font-black uppercase text-center text-lg md:text-xl leading-tight">
-                      {category.name}
-                    </h2>
-                    <p className="text-xs text-center mt-1 md:mt-0 md:text-xs">
-                      {catProducts.length} productos
-                    </p>
-                  </div>
-                  <div className="w-1/2 md:w-auto relative md:aspect-square bg-gray-100">
-                    {category.image ? (
+                  {isAccesorios ? (
+                    <div className="relative flex-1">
                       <Image
-                        src={category.image}
+                        src="/uploads/2026-05-09_01-47-19_545x425_scrot.png"
                         alt={category.name}
                         fill
-                        className="object-cover"
+                        className="object-cover mix-blend-multiply"
                       />
+                      <div className="absolute inset-0 bg-[#454745]/70 flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <h2 className="font-black uppercase text-xl leading-tight">
+                            {category.name}
+                          </h2>
+                          <p className="text-xs mt-1">
+                            {catProducts.length} productos
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="aspect-square bg-gray-200" />
+                    <>
+                      <div className="w-1/2 md:w-auto md:bg-transparent bg-[#454745] text-white md:text-black flex flex-col justify-center px-2 py-4 md:p-0">
+                        <h2 className="font-black uppercase text-center text-lg md:text-xl leading-tight">
+                          {category.name}
+                        </h2>
+                        <p className="text-xs text-center mt-1 md:mt-0 md:text-xs">
+                          {catProducts.length} productos
+                        </p>
+                      </div>
+                      <div className="w-1/2 md:w-auto relative md:aspect-square bg-gray-100">
+                        {category.image ? (
+                          <Image
+                            src={category.image}
+                            alt={category.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gray-200" />
+                        )}
+                      </div>
+                    </>
                   )}
-                  <div className="p-3 md:p-4">
-                    <h2 className="text-sm md:text-xl md:text-2xl font-black uppercase leading-tight">
-                      {category.name}
-                    </h2>
-                    <p className="text-xs md:text-sm mt-1">{catProducts.length} productos</p>
-                  </div>
                 </Link>
               );
             })}
