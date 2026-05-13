@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcrypt";
 
-const AUTH_COOKIE_NAME = "app-authenticated";
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -25,7 +23,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Usuario o contraseña incorrectos" }, { status: 401 });
     }
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -35,18 +33,6 @@ export async function POST(request: Request) {
         wallet: user.wallet,
       },
     });
-
-    response.cookies.set({
-      name: AUTH_COOKIE_NAME,
-      value: `${user.id}|${user.role}`,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-
-    return response;
   } catch {
     return NextResponse.json({ error: "Error en el servidor" }, { status: 500 });
   }
