@@ -399,9 +399,9 @@ export default function StaffPage() {
 
       {activeTab === "dashboard" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <div className="border-2 border-black p-4">
+          <div className="border-2 border-black p-4 overflow-hidden">
             <div className="text-sm text-gray-600 mb-1">Mi Billetera</div>
-            <div className="text-xl md:text-2xl font-black">
+            <div className="text-xl md:text-2xl font-black break-words">
               {formatPrice(stats?.wallet || 0)}
             </div>
           </div>
@@ -974,7 +974,7 @@ export default function StaffPage() {
                     <div className="col-span-2">
                       <span className="px-2 py-1 border border-black text-xs">{roleLabel(w.role)}</span>
                     </div>
-                    <div className="col-span-2 font-black">{formatPrice(w.wallet)}</div>
+                    <div className="col-span-2 font-black break-words">{formatPrice(w.wallet)}</div>
                     <div className="col-span-2 text-sm">
                       {w.lastTransaction ? (
                         <div>
@@ -1013,8 +1013,8 @@ export default function StaffPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500">Saldo</span>
-                      <span className="font-black text-xl">{formatPrice(w.wallet)}</span>
+                      <span className="text-sm text-gray-500 shrink-0 mr-2">Saldo</span>
+                      <span className="font-black text-xl text-right break-words">{formatPrice(w.wallet)}</span>
                     </div>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-gray-500">Último Mov.</span>
