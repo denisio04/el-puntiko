@@ -1,0 +1,4 @@
+Task 6: .env not tracked in git. .env.example updated.
+---
+3
+variables in .env.example

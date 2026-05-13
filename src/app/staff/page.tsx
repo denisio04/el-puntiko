@@ -375,7 +375,7 @@ export default function StaffPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b-2 border-black overflow-x-auto">
+      <div className="flex gap-2 mb-6 border-b-2 border-black overflow-x-auto hide-scrollbar">
         <button
           onClick={() => setActiveTab("dashboard")}
           className={`px-4 py-2 font-medium ${activeTab === "dashboard" ? "bg-black text-white" : "hover:bg-gray-100"}`}

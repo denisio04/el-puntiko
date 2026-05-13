@@ -1,0 +1,4 @@
+Task 1: AUTH_COOKIE_NAME removed from login, logout, sync routes
+src/app/api/auth/login/route.ts:0
+src/app/api/auth/logout/route.ts:0
+src/app/api/auth/sync/route.ts:0

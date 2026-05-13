@@ -1,0 +1,2 @@
+Task 3: Affiliates API cookie fallback removed. Only getToken used.
+0

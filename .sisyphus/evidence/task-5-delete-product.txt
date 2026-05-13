@@ -1,0 +1,2 @@
+Task 5: Product DELETE now uses soft-delete (isActive=false). No more orderItem.deleteMany.
+0

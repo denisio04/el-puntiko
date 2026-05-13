@@ -22,4 +22,13 @@
   ::selection {
     @apply bg-black text-white;
   }
+
+  /* Hide scrollbar but keep scrolling functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }

@@ -1,0 +1,2 @@
+Task 4: Staff route now has requireAdmin(). All admin routes protected.
+2
