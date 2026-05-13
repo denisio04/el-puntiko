@@ -67,18 +67,24 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"dashboard" | "orders" | "solicitudes" | "wallets">(
-    "dashboard",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "orders" | "solicitudes" | "wallets"
+  >("dashboard");
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
   const [solicitudesLoading, setSolicitudesLoading] = useState(true);
   const [solicitudesFilter, setSolicitudesFilter] = useState("");
-  const [solicitudesUpdating, setSolicitudesUpdating] = useState<string | null>(null);
-  const [showConfirmSuccess, setShowConfirmSuccess] = useState<string | null>(null);
+  const [solicitudesUpdating, setSolicitudesUpdating] = useState<string | null>(
+    null,
+  );
+  const [showConfirmSuccess, setShowConfirmSuccess] = useState<string | null>(
+    null,
+  );
   const [showStockError, setShowStockError] = useState<string | null>(null);
   const [wallets, setWallets] = useState<any[]>([]);
   const [walletsLoading, setWalletsLoading] = useState(false);
-  const [selectedWalletUser, setSelectedWalletUser] = useState<any | null>(null);
+  const [selectedWalletUser, setSelectedWalletUser] = useState<any | null>(
+    null,
+  );
   const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
   const [walletTxsLoading, setWalletTxsLoading] = useState(false);
 
@@ -141,12 +147,13 @@ export default function StaffPage() {
     async function fetchData() {
       if (!mounted) return;
       try {
-        const [walletRes, ordersRes, deliveriesRes, walletsRes] = await Promise.all([
-          getStaffWallet(),
-          getStaffOrders(),
-          getDeliveryPersons(),
-          getStaffWalletUsers(),
-        ]);
+        const [walletRes, ordersRes, deliveriesRes, walletsRes] =
+          await Promise.all([
+            getStaffWallet(),
+            getStaffOrders(),
+            getDeliveryPersons(),
+            getStaffWalletUsers(),
+          ]);
 
         if (walletRes.wallet !== undefined) {
           setStats({ wallet: walletRes.wallet });
@@ -271,7 +278,7 @@ export default function StaffPage() {
         const phone = req.user.phone.replace(/[^0-9]/g, "");
         const productName = req.product.name;
         const message = encodeURIComponent(
-          `Hola ${req.user.name || "cliente"}, el producto "${productName}" que solicitaste ya está disponible en EL PUNTIKO. Puedes comprarlo ahora.`
+          `Hola ${req.user.name || "cliente"}, el producto "${productName}" que solicitaste ya está disponible en EL PUNTIKO. Puedes comprarlo ahora.`,
         );
         window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
       }
@@ -285,9 +292,7 @@ export default function StaffPage() {
       });
       if (res.ok) {
         setSolicitudes((prev: any[]) =>
-          prev.map((r: any) =>
-            r.id === id ? { ...r, status: newStatus } : r
-          )
+          prev.map((r: any) => (r.id === id ? { ...r, status: newStatus } : r)),
         );
       } else {
         const data = await res.json();
@@ -312,8 +317,8 @@ export default function StaffPage() {
       if (res.ok) {
         setSolicitudes((prev: any[]) =>
           prev.map((r: any) =>
-            r.id === id ? { ...r, status: "COMPLETED" } : r
-          )
+            r.id === id ? { ...r, status: "COMPLETED" } : r,
+          ),
         );
         setShowConfirmSuccess(data.orderNumber);
       } else {
@@ -370,7 +375,7 @@ export default function StaffPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b-2 border-black">
+      <div className="flex gap-2 mb-6 border-b-2 border-black overflow-x-auto">
         <button
           onClick={() => setActiveTab("dashboard")}
           className={`px-4 py-2 font-medium ${activeTab === "dashboard" ? "bg-black text-white" : "hover:bg-gray-100"}`}
@@ -614,7 +619,12 @@ export default function StaffPage() {
                     {selectedOrder.subtotal > selectedOrder.total && (
                       <div className="flex justify-between text-green-600">
                         <span>Descuento</span>
-                        <span>-{formatPrice(selectedOrder.subtotal - selectedOrder.total)}</span>
+                        <span>
+                          -
+                          {formatPrice(
+                            selectedOrder.subtotal - selectedOrder.total,
+                          )}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between font-bold text-lg">
@@ -726,7 +736,9 @@ export default function StaffPage() {
             <>
               {[
                 ...(solicitudesFilter
-                  ? solicitudes.filter((r: any) => r.status === solicitudesFilter)
+                  ? solicitudes.filter(
+                      (r: any) => r.status === solicitudesFilter,
+                    )
                   : solicitudes),
               ].length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
@@ -744,7 +756,9 @@ export default function StaffPage() {
                       <div className="col-span-2 text-right">Acción</div>
                     </div>
                     {(solicitudesFilter
-                      ? solicitudes.filter((r: any) => r.status === solicitudesFilter)
+                      ? solicitudes.filter(
+                          (r: any) => r.status === solicitudesFilter,
+                        )
                       : solicitudes
                     ).map((req: any) => (
                       <div
@@ -779,20 +793,26 @@ export default function StaffPage() {
                         <div className="col-span-2">
                           <span
                             className={`inline-block px-2 py-1 text-xs font-bold ${
-                              ({
-                                PENDING: "bg-yellow-100 text-yellow-800",
-                                NOTIFIED: "bg-blue-100 text-blue-800",
-                                COMPLETED: "bg-green-100 text-green-800",
-                                CANCELLED: "bg-gray-100 text-gray-800",
-                              } as Record<string, string>)[req.status]
+                              (
+                                {
+                                  PENDING: "bg-yellow-100 text-yellow-800",
+                                  NOTIFIED: "bg-blue-100 text-blue-800",
+                                  COMPLETED: "bg-green-100 text-green-800",
+                                  CANCELLED: "bg-gray-100 text-gray-800",
+                                } as Record<string, string>
+                              )[req.status]
                             }`}
                           >
-                            {({
-                              PENDING: "Pendiente",
-                              NOTIFIED: "Notificado",
-                              COMPLETED: "Completado",
-                              CANCELLED: "Cancelado",
-                            } as Record<string, string>)[req.status]}
+                            {
+                              (
+                                {
+                                  PENDING: "Pendiente",
+                                  NOTIFIED: "Notificado",
+                                  COMPLETED: "Completado",
+                                  CANCELLED: "Cancelado",
+                                } as Record<string, string>
+                              )[req.status]
+                            }
                           </span>
                         </div>
                         <div className="col-span-2 text-right">
@@ -846,7 +866,9 @@ export default function StaffPage() {
                   {/* Mobile cards */}
                   <div className="md:hidden space-y-4">
                     {(solicitudesFilter
-                      ? solicitudes.filter((r: any) => r.status === solicitudesFilter)
+                      ? solicitudes.filter(
+                          (r: any) => r.status === solicitudesFilter,
+                        )
                       : solicitudes
                     ).map((req: any) => (
                       <div
@@ -857,20 +879,26 @@ export default function StaffPage() {
                           <div className="font-bold">{req.product.name}</div>
                           <span
                             className={`px-2 py-1 text-xs font-bold ${
-                              ({
-                                PENDING: "bg-yellow-100 text-yellow-800",
-                                NOTIFIED: "bg-blue-100 text-blue-800",
-                                COMPLETED: "bg-green-100 text-green-800",
-                                CANCELLED: "bg-gray-100 text-gray-800",
-                              } as Record<string, string>)[req.status]
+                              (
+                                {
+                                  PENDING: "bg-yellow-100 text-yellow-800",
+                                  NOTIFIED: "bg-blue-100 text-blue-800",
+                                  COMPLETED: "bg-green-100 text-green-800",
+                                  CANCELLED: "bg-gray-100 text-gray-800",
+                                } as Record<string, string>
+                              )[req.status]
                             }`}
                           >
-                            {({
-                              PENDING: "Pendiente",
-                              NOTIFIED: "Notificado",
-                              COMPLETED: "Completado",
-                              CANCELLED: "Cancelado",
-                            } as Record<string, string>)[req.status]}
+                            {
+                              (
+                                {
+                                  PENDING: "Pendiente",
+                                  NOTIFIED: "Notificado",
+                                  COMPLETED: "Completado",
+                                  CANCELLED: "Cancelado",
+                                } as Record<string, string>
+                              )[req.status]
+                            }
                           </span>
                         </div>
                         <div className="text-sm">
@@ -951,7 +979,9 @@ export default function StaffPage() {
           {walletsLoading ? (
             <div className="p-8 text-center text-gray-500">Cargando...</div>
           ) : wallets.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No hay billeteras disponibles</div>
+            <div className="p-8 text-center text-gray-500">
+              No hay billeteras disponibles
+            </div>
           ) : (
             <>
               {/* Desktop table */}
@@ -969,16 +999,26 @@ export default function StaffPage() {
                     key={w.id}
                     className={`grid grid-cols-12 p-4 border-b border-black items-center hover:bg-gray-50 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
                   >
-                    <div className="col-span-3 font-medium">{w.name || "Sin nombre"}</div>
-                    <div className="col-span-2 text-gray-600">{w.username || "-"}</div>
-                    <div className="col-span-2">
-                      <span className="px-2 py-1 border border-black text-xs">{roleLabel(w.role)}</span>
+                    <div className="col-span-3 font-medium">
+                      {w.name || "Sin nombre"}
                     </div>
-                    <div className="col-span-2 font-black break-words">{formatPrice(w.wallet)}</div>
+                    <div className="col-span-2 text-gray-600">
+                      {w.username || "-"}
+                    </div>
+                    <div className="col-span-2">
+                      <span className="px-2 py-1 border border-black text-xs">
+                        {roleLabel(w.role)}
+                      </span>
+                    </div>
+                    <div className="col-span-2 font-black break-words">
+                      {formatPrice(w.wallet)}
+                    </div>
                     <div className="col-span-2 text-sm">
                       {w.lastTransaction ? (
                         <div>
-                          <span className="text-green-600 font-bold">+{formatPrice(w.lastTransaction.amount)}</span>
+                          <span className="text-green-600 font-bold">
+                            +{formatPrice(w.lastTransaction.amount)}
+                          </span>
                           <span className="text-gray-500 text-xs block">
                             {txTypeLabel(w.lastTransaction.type)}
                           </span>
@@ -1005,23 +1045,35 @@ export default function StaffPage() {
                   <div key={w.id} className="border-2 border-black p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <p className="font-bold text-lg">{w.name || "Sin nombre"}</p>
-                        <p className="text-gray-500 text-sm">@{w.username || "-"}</p>
+                        <p className="font-bold text-lg">
+                          {w.name || "Sin nombre"}
+                        </p>
+                        <p className="text-gray-500 text-sm">
+                          @{w.username || "-"}
+                        </p>
                       </div>
                       <span className="px-2 py-1 border border-black text-xs shrink-0">
                         {roleLabel(w.role)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500 shrink-0 mr-2">Saldo</span>
-                      <span className="font-black text-xl text-right break-words">{formatPrice(w.wallet)}</span>
+                      <span className="text-sm text-gray-500 shrink-0 mr-2">
+                        Saldo
+                      </span>
+                      <span className="font-black text-xl text-right break-words">
+                        {formatPrice(w.wallet)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-gray-500">Último Mov.</span>
                       {w.lastTransaction ? (
                         <div className="text-right">
-                          <span className="text-green-600 font-bold text-sm">+{formatPrice(w.lastTransaction.amount)}</span>
-                          <span className="text-gray-500 text-xs block">{txTypeLabel(w.lastTransaction.type)}</span>
+                          <span className="text-green-600 font-bold text-sm">
+                            +{formatPrice(w.lastTransaction.amount)}
+                          </span>
+                          <span className="text-gray-500 text-xs block">
+                            {txTypeLabel(w.lastTransaction.type)}
+                          </span>
                         </div>
                       ) : (
                         <span className="text-gray-400 text-sm">—</span>
@@ -1047,7 +1099,9 @@ export default function StaffPage() {
           <div className="bg-white border-2 border-black w-full max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-3 md:p-4 border-b border-black sticky top-0 bg-white">
               <h2 className="text-lg md:text-xl font-black">
-                {selectedWalletUser.name || selectedWalletUser.username || "Usuario"}
+                {selectedWalletUser.name ||
+                  selectedWalletUser.username ||
+                  "Usuario"}
               </h2>
               <button
                 onClick={() => {
@@ -1074,18 +1128,23 @@ export default function StaffPage() {
 
               {selectedWalletUser.lastTransaction && (
                 <div className="border border-black p-3">
-                  <p className="text-sm font-medium text-gray-500 mb-1">Último Movimiento</p>
+                  <p className="text-sm font-medium text-gray-500 mb-1">
+                    Último Movimiento
+                  </p>
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="text-green-600 font-bold text-lg">
-                        +{formatPrice(selectedWalletUser.lastTransaction.amount)}
+                        +
+                        {formatPrice(selectedWalletUser.lastTransaction.amount)}
                       </span>
                       <span className="text-gray-500 text-sm ml-2">
                         {txTypeLabel(selectedWalletUser.lastTransaction.type)}
                       </span>
                     </div>
                     <span className="text-xs text-gray-400">
-                      {new Date(selectedWalletUser.lastTransaction.createdAt).toLocaleDateString("es-CU", {
+                      {new Date(
+                        selectedWalletUser.lastTransaction.createdAt,
+                      ).toLocaleDateString("es-CU", {
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric",
@@ -1103,9 +1162,13 @@ export default function StaffPage() {
               )}
 
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Historial de Transacciones</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Historial de Transacciones
+                </h3>
                 {walletTxsLoading ? (
-                  <div className="p-4 text-center text-gray-500">Cargando...</div>
+                  <div className="p-4 text-center text-gray-500">
+                    Cargando...
+                  </div>
                 ) : walletTransactions.length === 0 ? (
                   <div className="p-4 text-center text-gray-500 border border-black">
                     Sin transacciones
@@ -1127,13 +1190,16 @@ export default function StaffPage() {
                           className="grid grid-cols-12 p-3 border-b border-black items-center text-sm hover:bg-gray-50"
                         >
                           <div className="col-span-3 text-gray-600">
-                            {new Date(tx.createdAt).toLocaleDateString("es-CU", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(tx.createdAt).toLocaleDateString(
+                              "es-CU",
+                              {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </div>
                           <div className="col-span-2 font-mono text-xs">
                             {tx.orderNumber || "—"}
@@ -1159,26 +1225,35 @@ export default function StaffPage() {
                         <div key={tx.id} className="border border-black p-3">
                           <div className="flex justify-between items-start mb-2">
                             <span className="text-xs text-gray-500">
-                              {new Date(tx.createdAt).toLocaleDateString("es-CU", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {new Date(tx.createdAt).toLocaleDateString(
+                                "es-CU",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
                             </span>
                             {tx.orderNumber && (
-                              <span className="text-xs font-mono">{tx.orderNumber}</span>
+                              <span className="text-xs font-mono">
+                                {tx.orderNumber}
+                              </span>
                             )}
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="px-2 py-0.5 border border-black text-xs">
                               {txTypeLabel(tx.type)}
                             </span>
-                            <span className="font-bold text-green-600">+{formatPrice(tx.amount)}</span>
+                            <span className="font-bold text-green-600">
+                              +{formatPrice(tx.amount)}
+                            </span>
                           </div>
                           {tx.description && (
-                            <p className="text-xs text-gray-600 mt-1">{tx.description}</p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {tx.description}
+                            </p>
                           )}
                         </div>
                       ))}
@@ -1212,9 +1287,7 @@ export default function StaffPage() {
               <p className="text-gray-600 mb-2">
                 El pedido se ha creado correctamente.
               </p>
-              <p className="text-lg font-bold mb-6">
-                #{showConfirmSuccess}
-              </p>
+              <p className="text-lg font-bold mb-6">#{showConfirmSuccess}</p>
               <button
                 onClick={() => setShowConfirmSuccess(null)}
                 className="w-full py-3 bg-black text-white font-medium hover:bg-gray-800"
@@ -1234,9 +1307,7 @@ export default function StaffPage() {
                 <span className="text-3xl font-black">✕</span>
               </div>
               <h2 className="text-2xl font-black mb-2">STOCK NO DISPONIBLE</h2>
-              <p className="text-gray-600 mb-6">
-                {showStockError}
-              </p>
+              <p className="text-gray-600 mb-6">{showStockError}</p>
               <button
                 onClick={() => setShowStockError(null)}
                 className="w-full py-3 bg-black text-white font-medium hover:bg-gray-800"
