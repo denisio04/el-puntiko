@@ -102,12 +102,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "ID requerido" }, { status: 400 });
     }
 
-    await prisma.orderItem.deleteMany({
-      where: { productId: id },
-    });
-
-    await prisma.product.delete({
+    await prisma.product.update({
       where: { id },
+      data: { isActive: false },
     });
 
     return NextResponse.json({ success: true });

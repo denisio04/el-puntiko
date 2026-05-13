@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth) return adminUnauthorized();
+
   try {
     const staff = await prisma.user.findMany({
       where: { role: "STAFF" },
