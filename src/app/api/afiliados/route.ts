@@ -3,10 +3,7 @@ import { prisma } from "@/lib/db";
 import { generateAffiliateCode } from "@/lib/affiliate";
 import { getToken } from "next-auth/jwt";
 
-const AUTH_COOKIE_NAME = "app-authenticated";
-
 async function getAuthFromRequest(request: NextRequest): Promise<{ userId: string; role: string } | null> {
-  // Try NextAuth cookie first
   const nextAuthToken = await getToken({ 
     req: request, 
     secret: process.env.NEXTAUTH_SECRET,
@@ -17,14 +14,7 @@ async function getAuthFromRequest(request: NextRequest): Promise<{ userId: strin
     return { userId: nextAuthToken.id, role: nextAuthToken.role as string };
   }
 
-  // Fall back to custom cookie
-  const cookie = request.cookies.get(AUTH_COOKIE_NAME);
-  if (!cookie) return null;
-  
-  const parts = cookie.value.split("|");
-  if (parts.length !== 2) return null;
-  
-  return { userId: parts[0], role: parts[1] };
+  return null;
 }
 
 export async function GET(request: NextRequest) {

@@ -1,39 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 export const dynamic = 'force-dynamic';
 
-async function getAuthFromRequest(request: NextRequest): Promise<{ userId: string; role: string } | null> {
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) return null;
-
-  const authCookie = cookieHeader.split(";").find(c => c.trim().startsWith("app-authenticated="));
-  if (!authCookie) return null;
-
-  const tokenWithPrefix = authCookie.split("=")[1];
-  if (!tokenWithPrefix) return null;
-
-  try {
-    const token = decodeURIComponent(tokenWithPrefix);
-    const parts = token.split("|");
-    if (parts.length >= 2) {
-      return { userId: parts[0], role: parts[1] };
-    }
-  } catch (e) {
-    return null;
-  }
-
-  return null;
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthFromRequest(request);
-    if (!auth || (auth.role !== "DELIVERY" && auth.role !== "ADMIN")) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || (session.user.role !== "DELIVERY" && session.user.role !== "ADMIN")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const userId = auth.userId;
+    const userId = session.user.id;
 
     const orders = await prisma.order.findMany({
       where: { deliveryId: userId },
