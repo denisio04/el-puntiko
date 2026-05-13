@@ -111,12 +111,28 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 30);
 
+  const topViewedProducts = await prisma.product.findMany({
+    where: { isActive: true, views: { gt: 0 } },
+    orderBy: { views: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      name: true,
+      views: true,
+    },
+  });
+
   return NextResponse.json({
     wallet: supplier.wallet || 0,
     pendingBalance,
     totalSales: confirmedOrders.length,
     totalEarned: totalEarned._sum.amount || 0,
     topProducts,
+    topViewedProducts: topViewedProducts.map((p) => ({
+      productId: p.id,
+      productName: p.name,
+      views: p.views,
+    })),
     ordersByDate,
   });
 }

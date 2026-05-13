@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, password, name, phone, ci, address } = body;
+    const { username, password, name, phone, ci, address, preferredCurrency } = body;
 
     if (!username || !password) {
       return NextResponse.json(
@@ -59,6 +59,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const validCurrencies = ["USD", "CUP", "ZELLE"];
+    const userCurrency = preferredCurrency && validCurrencies.includes(preferredCurrency)
+      ? preferredCurrency
+      : "USD";
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
@@ -69,6 +74,7 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         ci: ci || null,
         address: address || null,
+        preferredCurrency: userCurrency,
         role: "CUSTOMER",
         wallet: 0,
       },

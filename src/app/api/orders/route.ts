@@ -118,27 +118,11 @@ export async function POST(request: NextRequest) {
 
     // --- 2. Transacción: crear orden + descontar stock ---
     const order = await prisma.$transaction(async (tx) => {
-      const cookieRefCode = request.cookies.get("referral_code")?.value || null;
-      console.log("Cookie referral_code:", cookieRefCode);
-
-      let cookieAffiliateId: string | null = null;
-      if (cookieRefCode) {
-        const sanitizedCookieCode = sanitizeRefCode(cookieRefCode);
-        if (sanitizedCookieCode && sanitizedCookieCode.length > 0) {
-          const cookieProfile = await tx.affiliateProfile.findUnique({
-            where: { code: sanitizedCookieCode },
-          });
-          cookieAffiliateId = cookieProfile?.id ?? null;
-        }
-      }
-      console.log("Cookie affiliateId:", cookieAffiliateId);
-
-      // Mapear affiliateId por cada item - solo el primer producto hereda el cookieRefCode
+      // Mapear affiliateId por cada item según affiliateCode enviado desde el carrito
       const itemAffiliateMap = new Map<string, string | null>();
       
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const code = i === 0 ? (item.affiliateCode || cookieRefCode) : item.affiliateCode;
+      for (const item of items) {
+        const code = item.affiliateCode;
         if (code && code.length > 0) {
           const sanitizedCode = sanitizeRefCode(code);
           if (sanitizedCode && sanitizedCode.length > 0) {
@@ -223,39 +207,32 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (cookieAffiliateId) {
-        const affiliate = await tx.affiliateProfile.findUnique({
-          where: { id: cookieAffiliateId },
-        });
-        if (affiliate) {
-          for (const item of newOrder.items) {
-            if (item.affiliateId) {
-              const itemAffiliate = await tx.affiliateProfile.findUnique({
-                where: { id: item.affiliateId },
+      for (const item of newOrder.items) {
+        if (item.affiliateId) {
+          const itemAffiliate = await tx.affiliateProfile.findUnique({
+            where: { id: item.affiliateId },
+          });
+          if (itemAffiliate) {
+            const itemTotal = item.price * item.quantity;
+            const itemCost = (item.purchasePrice ?? 0) * item.quantity;
+            const itemProfit = itemTotal - itemCost;
+            const itemCommission = itemProfit > 0 
+              ? Math.round(itemProfit * (itemAffiliate.commissionRate ?? 0.1) * 100) / 100
+              : 0;
+            if (itemCommission > 0) {
+              await tx.walletTransaction.create({
+                data: {
+                  userId: itemAffiliate.userId,
+                  amount: itemCommission,
+                  type: "COMMISSION_PENDING",
+                  description: `Comisión por ${item.quantity}x ${item.product?.name ?? 'producto'}`,
+                  orderId: newOrder.id,
+                },
               });
-              if (itemAffiliate) {
-                const itemTotal = item.price * item.quantity;
-                const itemCost = (item.purchasePrice ?? 0) * item.quantity;
-                const itemProfit = itemTotal - itemCost;
-                const itemCommission = itemProfit > 0 
-                  ? Math.round(itemProfit * (itemAffiliate.commissionRate ?? 0.1) * 100) / 100
-                  : 0;
-                if (itemCommission > 0) {
-                  await tx.walletTransaction.create({
-                    data: {
-                      userId: itemAffiliate.userId,
-                      amount: itemCommission,
-                      type: "COMMISSION_PENDING",
-                      description: `Comisión por ${item.quantity}x ${item.product?.name ?? 'producto'}`,
-                      orderId: newOrder.id,
-                    },
-                  });
-                  await tx.affiliateProfile.update({
-                    where: { id: item.affiliateId },
-                    data: { pendingBalance: { increment: itemCommission } },
-                  });
-                }
-              }
+              await tx.affiliateProfile.update({
+                where: { id: item.affiliateId },
+                data: { pendingBalance: { increment: itemCommission } },
+              });
             }
           }
         }

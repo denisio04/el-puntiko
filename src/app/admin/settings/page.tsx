@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useSession } from "next-auth/react";
-import { X, Settings as SettingsIcon, Percent, Phone } from "lucide-react";
+import { X, Settings as SettingsIcon, Percent, Phone, DollarSign } from "lucide-react";
 
 interface Staff {
   id: string;
@@ -16,6 +16,8 @@ interface Settings {
   id: string;
   affiliateCommissionRate: number;
   deliveryCommissionRate: number;
+  usdToCupRate: number;
+  zelleToCupRate: number;
   contactStaffId: string | null;
   contactPhone: string | null;
 }
@@ -45,6 +47,8 @@ async function updateSettings(
   deliveryCommissionRate: number,
   contactStaffId: string | null,
   contactPhone: string | null,
+  usdToCupRate?: number,
+  zelleToCupRate?: number,
 ): Promise<Settings> {
   const res = await fetch("/api/admin/settings", {
     method: "PUT",
@@ -54,6 +58,8 @@ async function updateSettings(
       deliveryCommissionRate,
       contactStaffId,
       contactPhone,
+      usdToCupRate,
+      zelleToCupRate,
     }),
   });
   if (!res.ok) {
@@ -93,6 +99,8 @@ export default function AdminSettingsPage() {
 
   const [affiliateRate, setAffiliateRate] = useState("10");
   const [deliveryRate, setDeliveryRate] = useState("20");
+  const [usdToCupRate, setUsdToCupRate] = useState("325");
+  const [zelleToCupRate, setZelleToCupRate] = useState("325");
   const [staff, setStaff] = useState<Staff[]>([]);
   const [contactStaffId, setContactStaffId] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -116,6 +124,8 @@ export default function AdminSettingsPage() {
         setSettings(data);
         setAffiliateRate((data.affiliateCommissionRate * 100).toString());
         setDeliveryRate((data.deliveryCommissionRate * 100).toString());
+        setUsdToCupRate((data.usdToCupRate ?? 325).toString());
+        setZelleToCupRate((data.zelleToCupRate ?? 325).toString());
         setContactStaffId(data.contactStaffId || "");
         setContactPhone(data.contactPhone || "");
       }
@@ -127,6 +137,8 @@ export default function AdminSettingsPage() {
     setError("");
     const affiliateNum = parseFloat(affiliateRate);
     const deliveryNum = parseFloat(deliveryRate);
+    const usdNum = parseFloat(usdToCupRate);
+    const zelleNum = parseFloat(zelleToCupRate);
 
     if (isNaN(affiliateNum) || affiliateNum < 0 || affiliateNum > 100) {
       setError("Comisión de afiliado debe ser 0-100");
@@ -138,6 +150,16 @@ export default function AdminSettingsPage() {
       return;
     }
 
+    if (isNaN(usdNum) || usdNum <= 0) {
+      setError("Tasa USD→CUP debe ser un número mayor que 0");
+      return;
+    }
+
+    if (isNaN(zelleNum) || zelleNum <= 0) {
+      setError("Tasa ZELLE→CUP debe ser un número mayor que 0");
+      return;
+    }
+
     setSaving(true);
     try {
       const updated = await updateSettings(
@@ -145,6 +167,8 @@ export default function AdminSettingsPage() {
         deliveryNum / 100,
         contactStaffId || null,
         contactPhone || null,
+        usdNum,
+        zelleNum,
       );
       setSettings(updated);
       setShowSuccess(true);
@@ -300,6 +324,66 @@ export default function AdminSettingsPage() {
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
                   O ingresa un número manualmente (sin +53)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-2 border-black p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5" />
+              <h2 className="text-lg font-bold">TASAS DE CAMBIO</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  USD → CUP
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={usdToCupRate}
+                  onChange={(e) => setUsdToCupRate(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-black font-medium"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Tasa del dólar en pesos cubanos
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  ZELLE → CUP
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={zelleToCupRate}
+                  onChange={(e) => setZelleToCupRate(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-black font-medium"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Tasa de Zelle en pesos cubanos
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-300 p-3">
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  USD → ZELLE (calculado)
+                </label>
+                <p className="text-lg font-bold">
+                  {(() => {
+                    const usd = parseFloat(usdToCupRate);
+                    const zelle = parseFloat(zelleToCupRate);
+                    if (isNaN(usd) || isNaN(zelle) || zelle <= 0) return "—";
+                    return (usd / zelle).toFixed(4);
+                  })()}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Se calcula automáticamente: USD→CUP ÷ ZELLE→CUP
                 </p>
               </div>
             </div>

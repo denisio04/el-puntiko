@@ -99,7 +99,8 @@ export default function PerfilBonificacionesPage() {
     );
   }
 
-  const isBonoUsed = progress.isActive && !progress.canUseBonus && progress.hasReached === false;
+  const isBonoUsed =
+    progress.isActive && !progress.canUseBonus && progress.hasReached === false;
   const percentage = progress.isActive
     ? Math.min((progress.confirmedOrders / progress.requiredOrders) * 100, 100)
     : 0;
@@ -136,12 +137,8 @@ export default function PerfilBonificacionesPage() {
               </div>
 
               <div className="mt-4 flex justify-between text-sm">
-                <span>
-                  {progress.confirmedOrders} pedido(s) confirmado(s)
-                </span>
-                <span>
-                  {progress.requiredOrders} pedidos necesarios
-                </span>
+                <span>{progress.confirmedOrders} pedido(s) confirmado(s)</span>
+                <span>{progress.requiredOrders} pedidos necesarios</span>
               </div>
             </div>
 
@@ -168,12 +165,12 @@ export default function PerfilBonificacionesPage() {
 
             {isBonoUsed && (
               <div className="border-2 border-black p-6 text-center">
-                <h2 className="text-2xl font-black mb-2">
-                  ¡BONO APLICADO!
-                </h2>
+                <h2 className="text-2xl font-black mb-2">¡BONO APLICADO!</h2>
                 <p className="mb-4">
-                  Has usado tu descuento del {Math.round(progress.discountPercent * 100)}%.
-                  Necesitas hacer {progress.requiredOrders} pedido(s) más para volver a desbloquearlo.
+                  Has usado tu descuento del{" "}
+                  {Math.round(progress.discountPercent * 100)}%. Necesitas hacer{" "}
+                  {progress.requiredOrders} pedido(s) más para volver a
+                  desbloquearlo.
                 </p>
                 <a
                   href="/"
@@ -189,9 +186,9 @@ export default function PerfilBonificacionesPage() {
                   ¡DESCUENTO DESBLOQUEADO!
                 </h2>
                 <p className="mb-4">
-                  Has alcanzado el requisito de pedidos. Ahora puedes
-                  disfrutar de {Math.round(progress.discountPercent * 100)}%
-                  de descuento en tus compras.
+                  Has alcanzado el requisito de pedidos. Ahora puedes disfrutar
+                  de {Math.round(progress.discountPercent * 100)}% de descuento
+                  en tus compras.
                 </p>
                 <a
                   href="/productos"
@@ -203,9 +200,7 @@ export default function PerfilBonificacionesPage() {
             )}
             {!isBonoUsed && !progress.hasReached && (
               <div className="border-2 border-black p-6 text-center">
-                <h2 className="text-xl font-black mb-2">
-                  ¡SEGUÍ COMPRANDO!
-                </h2>
+                <h2 className="text-xl font-black mb-2">¡SIGUE COMPRANDO!</h2>
                 <p className="text-gray-600 mb-2">
                   Necesitas {progress.requiredOrders - progress.confirmedOrders}{" "}
                   pedido(s) más para desbloquear tu descuento de{" "}

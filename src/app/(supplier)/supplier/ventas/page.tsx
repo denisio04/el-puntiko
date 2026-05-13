@@ -14,6 +14,12 @@ interface ProductStat {
   revenue: number;
 }
 
+interface ProductViewStat {
+  productId: string;
+  productName: string;
+  views: number;
+}
+
 interface OrderStat {
   date: string;
   orders: number;
@@ -26,6 +32,7 @@ export default function SupplierStatsPage() {
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [topProducts, setTopProducts] = useState<ProductStat[]>([]);
+  const [topViewedProducts, setTopViewedProducts] = useState<ProductViewStat[]>([]);
   const [ordersByDate, setOrdersByDate] = useState<OrderStat[]>([]);
 
   useEffect(() => {
@@ -47,6 +54,7 @@ export default function SupplierStatsPage() {
         if (res.ok) {
           const data = await res.json();
           setTopProducts(data.topProducts || []);
+          setTopViewedProducts(data.topViewedProducts || []);
           setOrdersByDate(data.ordersByDate || []);
         }
       } catch (error) {
@@ -94,6 +102,36 @@ export default function SupplierStatsPage() {
                     <td className="p-3 border-r border-black">{p.productName}</td>
                     <td className="p-3 text-right border-r border-black font-medium">{p.totalSold}</td>
                     <td className="p-3 text-right font-bold">{formatPrice(p.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="border-2 border-black mb-6">
+        <div className="border-b-2 border-black p-4 bg-black text-white">
+          <h2 className="font-bold">Productos Más Vistos</h2>
+        </div>
+        {topViewedProducts.length === 0 || topViewedProducts.every((p) => p.views === 0) ? (
+          <div className="p-4 text-center text-gray-500">
+            No hay datos de vistas
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm md:text-base">
+              <thead className="border-b border-black bg-gray-50">
+                <tr>
+                  <th className="text-left p-3 font-bold border-r border-black">Producto</th>
+                  <th className="text-right p-3 font-bold">Vistas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topViewedProducts.map((p, i) => (
+                  <tr key={i} className="border-b border-black hover:bg-gray-50">
+                    <td className="p-3 border-r border-black">{p.productName}</td>
+                    <td className="p-3 text-right font-medium">{p.views}</td>
                   </tr>
                 ))}
               </tbody>

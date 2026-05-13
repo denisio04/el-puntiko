@@ -9,6 +9,7 @@ interface ProfileData {
   phone?: string | null;
   address?: string | null;
   ci?: string | null;
+  preferredCurrency?: string | null;
 }
 
 interface EditProfileModalProps {
@@ -23,7 +24,7 @@ export function EditProfileModal({ isOpen, onClose, onSave, initialData }: EditP
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -89,6 +90,23 @@ export function EditProfileModal({ isOpen, onClose, onSave, initialData }: EditP
           onChange={handleChange}
           placeholder="ej: 12345678901"
         />
+
+        <div className="w-full">
+          <label htmlFor="preferredCurrency" className="block text-sm font-medium mb-2">
+            Moneda preferida
+          </label>
+          <select
+            id="preferredCurrency"
+            name="preferredCurrency"
+            value={formData.preferredCurrency || "USD"}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border border-black bg-white text-black focus:outline-none focus:ring-0 focus:border-2"
+          >
+            <option value="USD">USD (Dólar)</option>
+            <option value="CUP">CUP (Peso Cubano)</option>
+            <option value="ZELLE">ZELLE</option>
+          </select>
+        </div>
 
         <div className="flex gap-4 mt-4">
           <button

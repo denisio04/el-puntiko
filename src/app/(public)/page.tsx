@@ -1,47 +1,146 @@
-import { prisma } from "@/lib/db";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { CategoryCard } from "@/components/category/CategoryCard";
+import { ProductCard } from "@/components/product/ProductCard";
+import { useCurrency } from "@/hooks/useCurrency";
+import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 
-export const dynamic = "force-dynamic";
-
-import type { Product } from "@/types";
-
-interface Props {
-  searchParams: Promise<{ search?: string }>;
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image: string | null;
 }
 
-export default async function HomePage({ searchParams }: Props) {
-  const params = await searchParams;
-  const searchQuery = params?.search || "";
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  stock: number;
+  purchasePrice?: number | null;
+  image?: string | null;
+  salesCount?: number;
+  category: string | null;
+}
 
-  const categories = await prisma.category.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
+async function fetchCategories(): Promise<Category[]> {
+  try {
+    const res = await fetch("/api/categories");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchProducts(searchQuery?: string): Promise<Product[]> {
+  try {
+    const url = searchQuery
+      ? `/api/products?search=${encodeURIComponent(searchQuery)}`
+      : "/api/products";
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchBestSellers(): Promise<Product[]> {
+  try {
+    const res = await fetch("/api/products/best-sellers");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchNewestProducts(): Promise<Product[]> {
+  try {
+    const res = await fetch("/api/products?sort=newest");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+type TabId = "categories" | "best-sellers" | "newest";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "categories", label: "CATEGORÍAS" },
+  { id: "best-sellers", label: "MÁS VENDIDOS" },
+  { id: "newest", label: "NUEVOS" },
+];
+
+export default function HomePage() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+  const { preferredCurrency, rates } = useCurrency();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [tabProducts, setTabProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>("categories");
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchCategories(), fetchProducts(searchQuery)]).then(
+      ([cats, prods]) => {
+        setCategories(cats);
+        setProducts(prods);
+        setLoading(false);
+      }
+    );
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (activeTab === "categories") {
+      setTabProducts([]);
+      setTabLoading(false);
+      return;
+    }
+
+    setTabLoading(true);
+
+    let promise: Promise<Product[]>;
+    switch (activeTab) {
+      case "best-sellers":
+        promise = fetchBestSellers();
+        break;
+      case "newest":
+        promise = fetchNewestProducts();
+        break;
+      default:
+        promise = Promise.resolve([]);
+    }
+
+    promise.then((prods) => {
+      setTabProducts(prods);
+      setTabLoading(false);
+    });
+  }, [activeTab]);
+
+  const productsByCategory: Record<string, Product[]> = {};
+  categories.forEach((cat) => {
+    productsByCategory[cat.name] = products.filter(
+      (p) => p.category === cat.name
+    );
   });
 
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      ...(searchQuery
-        ? {
-            OR: [
-              { name: { contains: searchQuery } },
-              { description: { contains: searchQuery } },
-              { category: { contains: searchQuery } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const productsByCategory = categories.reduce<Record<string, Product[]>>(
-    (acc, cat) => {
-      acc[cat.name] = products.filter((p) => p.category === cat.name);
-      return acc;
-    },
-    {},
-  );
+  const isLoading = loading || tabLoading;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -58,8 +157,28 @@ export default async function HomePage({ searchParams }: Props) {
         </p>
       </section>
 
+      {!searchQuery && (
+        <div className="flex overflow-x-auto border-b border-black">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-shrink-0 md:flex-1 px-4 md:px-6 py-3 font-bold text-sm border-r border-black last:border-r-0 transition-colors whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "bg-black text-white"
+                  : "bg-white text-black hover:bg-gray-100"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <section className="py-8 md:py-12 px-4 md:px-6">
-        {searchQuery ? (
+        {isLoading ? (
+          <p className="text-gray-500">Cargando...</p>
+        ) : searchQuery ? (
           <div>
             <h2 className="text-2xl font-bold mb-6">
               Resultados: &ldquo;{searchQuery}&rdquo;
@@ -88,76 +207,50 @@ export default async function HomePage({ searchParams }: Props) {
                       {product.name}
                     </h3>
                     <p className="font-black mt-1">
-                      ${product.price.toFixed(2)}
+                      {formatConvertedPrice(
+                        convertPrice(product.price, preferredCurrency, rates),
+                        preferredCurrency
+                      )}
                     </p>
                   </Link>
                 ))}
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === "categories" ? (
           <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {categories.map((cat) => {
-              const category = cat as {
-                id: string;
-                name: string;
-                slug: string;
-                image?: string | null;
-              };
-              const catProducts = productsByCategory[category.name] || [];
-              const isAccesorios = category.slug === "accesorios";
+              const catProducts = productsByCategory[cat.name] || [];
               return (
-                <Link
-                  key={category.id}
-                  href={`/categoria/${category.slug}`}
-                  className={`flex flex-row h-20 md:h-auto md:block ${isAccesorios ? "relative" : "border border-black"} hover:bg-black hover:text-white transition-colors`}
-                >
-                  {isAccesorios ? (
-                    <div className="relative flex-1">
-                      <Image
-                        src="/uploads/2026-05-09_01-47-19_545x425_scrot.png"
-                        alt={category.name}
-                        fill
-                        className="object-cover mix-blend-multiply"
-                      />
-                      <div className="absolute inset-0 bg-[#454745]/70 flex items-center justify-center">
-                        <div className="text-white text-center">
-                          <h2 className="font-black uppercase text-xl leading-tight">
-                            {category.name}
-                          </h2>
-                          <p className="text-xs mt-1">
-                            {catProducts.length} productos
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="w-1/2 md:w-auto md:bg-transparent bg-[#454745] text-white md:text-black flex flex-col justify-center px-2 py-4 md:p-0">
-                        <h2 className="font-black uppercase text-center text-lg md:text-xl leading-tight">
-                          {category.name}
-                        </h2>
-                        <p className="text-xs text-center mt-1 md:mt-0 md:text-xs">
-                          {catProducts.length} productos
-                        </p>
-                      </div>
-                      <div className="w-1/2 md:w-auto relative md:aspect-square bg-gray-100">
-                        {category.image ? (
-                          <Image
-                            src={category.image}
-                            alt={category.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gray-200" />
-                        )}
-                      </div>
-                    </>
-                  )}
-                </Link>
+                <CategoryCard
+                  key={cat.id}
+                  name={cat.name}
+                  slug={cat.slug}
+                  image={cat.image}
+                  productCount={catProducts.length}
+                />
               );
             })}
+          </div>
+        ) : (
+          <div>
+            {tabProducts.length === 0 ? (
+              <p className="text-gray-500">
+                {activeTab === "best-sellers"
+                  ? "Sin ventas aún"
+                  : "No hay productos disponibles"}
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                {tabProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    showSalesBadge={activeTab === "best-sellers"}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </section>

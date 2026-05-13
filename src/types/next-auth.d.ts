@@ -10,6 +10,7 @@ declare module "next-auth" {
       role: string;
       phone: string | null;
       address: string | null;
+      preferredCurrency: string | null;
     };
   }
 
@@ -18,6 +19,7 @@ declare module "next-auth" {
     role: string;
     phone: string | null;
     address: string | null;
+    preferredCurrency: string | null;
   }
 }
 
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
     role: string;
     phone: string | null;
     address: string | null;
+    preferredCurrency: string | null;
   }
 }

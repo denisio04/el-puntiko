@@ -140,6 +140,40 @@ async function main() {
   });
 
   console.log("✓ Configuración global creada");
+
+  console.log("Seed: Creando solicitudes de prueba...");
+
+  const testCustomer = await prisma.user.findFirst({ where: { role: "CUSTOMER" } });
+  const outOfStockProduct = await prisma.product.findFirst({ where: { slug: "botas-chelsea" } });
+  const lowStockProduct = await prisma.product.findFirst({ where: { slug: "sandalias-casual" } });
+
+  if (testCustomer && outOfStockProduct) {
+    await prisma.product.update({
+      where: { id: outOfStockProduct.id },
+      data: { stock: 0 },
+    });
+
+    await prisma.productRequest.upsert({
+      where: { id: `seed-request-${testCustomer.id}-${outOfStockProduct.id}` },
+      update: {},
+      create: {
+        id: `seed-request-${testCustomer.id}-${outOfStockProduct.id}`,
+        productId: outOfStockProduct.id,
+        userId: testCustomer.id,
+        status: "PENDING",
+      },
+    });
+    console.log(`✓ Solicitud de prueba creada para "${outOfStockProduct.name}" (stock: 0)`);
+  }
+
+  if (lowStockProduct) {
+    await prisma.product.update({
+      where: { id: lowStockProduct.id },
+      data: { stock: 2 },
+    });
+    console.log(`✓ Stock de "${lowStockProduct.name}" reducido a 2 para probar el badge`);
+  }
+
   console.log("Seed completado!");
 }
 

@@ -15,6 +15,7 @@ export interface Product {
   stock: number;
   category?: string | null;
   isActive: boolean;
+  views: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,6 +96,20 @@ export interface WalletTransaction {
   updatedAt: Date;
   user?: User;
   order?: Order;
+}
+
+// ProductRequest types
+export type ProductRequestStatus = "PENDING" | "NOTIFIED" | "COMPLETED" | "CANCELLED";
+
+export interface ProductRequest {
+  id: string;
+  productId: string;
+  userId: string;
+  status: ProductRequestStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  product?: Product;
+  user?: User;
 }
 
 // Session types (NextAuth)

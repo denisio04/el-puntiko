@@ -3,7 +3,8 @@
 import * as React from "react";
 import Image from "next/image";
 import { CartItem as CartItemType } from "@/stores/useCartStore";
-import { formatPrice } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
+import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 
 interface CartItemProps {
   item: CartItemType;
@@ -12,6 +13,8 @@ interface CartItemProps {
 }
 
 export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItemProps) {
+  const { preferredCurrency, rates } = useCurrency();
+
   return (
     <div className="flex items-center gap-4 py-4 border-b">
       {item.image && (
@@ -25,7 +28,12 @@ export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItem
       )}
       <div className="flex-1">
         <h3 className="font-medium">{item.name}</h3>
-        <p className="text-gray-600">{formatPrice(item.price)}</p>
+        <p className="text-gray-600">
+          {formatConvertedPrice(
+            convertPrice(item.price, preferredCurrency, rates),
+            preferredCurrency
+          )}
+        </p>
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -43,7 +51,12 @@ export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItem
         </button>
       </div>
       <div className="text-right">
-        <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+        <p className="font-medium">
+          {formatConvertedPrice(
+            convertPrice(item.price * item.quantity, preferredCurrency, rates),
+            preferredCurrency
+          )}
+        </p>
         <button
           onClick={() => onRemove(item.id)}
           className="text-red-500 text-sm"

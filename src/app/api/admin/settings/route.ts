@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { affiliateCommissionRate, deliveryCommissionRate, contactStaffId, contactPhone } = body;
+    const { affiliateCommissionRate, deliveryCommissionRate, contactStaffId, contactPhone, usdToCupRate, zelleToCupRate } = body;
 
     if (
       typeof affiliateCommissionRate !== "number" ||
@@ -72,11 +72,31 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (usdToCupRate !== undefined) {
+      if (typeof usdToCupRate !== "number" || usdToCupRate <= 0) {
+        return NextResponse.json(
+          { error: "Tasa USD→CUP debe ser un número mayor que 0" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (zelleToCupRate !== undefined) {
+      if (typeof zelleToCupRate !== "number" || zelleToCupRate <= 0) {
+        return NextResponse.json(
+          { error: "Tasa ZELLE→CUP debe ser un número mayor que 0" },
+          { status: 400 }
+        );
+      }
+    }
+
     const updateData: Record<string, unknown> = {
       affiliateCommissionRate,
       deliveryCommissionRate,
     };
 
+    if (usdToCupRate !== undefined) updateData.usdToCupRate = usdToCupRate;
+    if (zelleToCupRate !== undefined) updateData.zelleToCupRate = zelleToCupRate;
     if (contactStaffId !== undefined) updateData.contactStaffId = contactStaffId || null;
     if (contactPhone !== undefined) updateData.contactPhone = contactPhone || null;
 
@@ -87,6 +107,8 @@ export async function PUT(request: NextRequest) {
         id: "global",
         affiliateCommissionRate,
         deliveryCommissionRate,
+        usdToCupRate: usdToCupRate ?? 325.0,
+        zelleToCupRate: zelleToCupRate ?? 325.0,
         contactStaffId: contactStaffId || null,
         contactPhone: contactPhone || null,
       },

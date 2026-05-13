@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { formatPrice } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
+import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 import { Badge } from "@/components/ui/Badge";
 
 interface Order {
@@ -27,6 +28,7 @@ interface Order {
 export default function OrderPage() {
   const params = useParams();
   const router = useRouter();
+  const { preferredCurrency, rates } = useCurrency();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -108,7 +110,12 @@ export default function OrderPage() {
         {order.items.map((item) => (
           <div key={item.id} className="flex justify-between py-2 border-b last:border-0">
             <span>{item.product.name} x{item.quantity}</span>
-            <span>{formatPrice(item.price * item.quantity)}</span>
+            <span>
+              {formatConvertedPrice(
+                convertPrice(item.price * item.quantity, preferredCurrency, rates),
+                preferredCurrency
+              )}
+            </span>
           </div>
         ))}
       </div>
@@ -116,7 +123,12 @@ export default function OrderPage() {
       <div className="border rounded-lg p-6">
         <div className="flex justify-between font-bold text-lg">
           <span>Total</span>
-          <span>{formatPrice(order.total)}</span>
+          <span>
+            {formatConvertedPrice(
+              convertPrice(order.total, preferredCurrency, rates),
+              preferredCurrency
+            )}
+          </span>
         </div>
       </div>
     </div>

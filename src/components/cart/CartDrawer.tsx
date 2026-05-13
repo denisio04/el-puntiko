@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useCartStore } from "@/stores/useCartStore";
-import { formatPrice } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
+import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 import { CartItemComponent } from "./CartItem";
 
 interface CartDrawerProps {
@@ -16,6 +17,7 @@ export function CartDrawer({ isOpen, onClose, onCheckout }: CartDrawerProps) {
   const getTotal = useCartStore((state) => state.getTotal);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  const { preferredCurrency, rates } = useCurrency();
 
   React.useEffect(() => {
     if (isOpen) {
@@ -62,7 +64,12 @@ export function CartDrawer({ isOpen, onClose, onCheckout }: CartDrawerProps) {
           <div className="border-t p-4">
             <div className="flex justify-between mb-4">
               <span className="font-medium">Total</span>
-              <span className="font-bold text-lg">{formatPrice(getTotal())}</span>
+              <span className="font-bold text-lg">
+                {formatConvertedPrice(
+                  convertPrice(getTotal(), preferredCurrency, rates),
+                  preferredCurrency
+                )}
+              </span>
             </div>
             <button
               onClick={onCheckout}

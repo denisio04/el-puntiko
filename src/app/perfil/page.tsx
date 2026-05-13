@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { useCurrencyStore } from "@/stores/useCurrencyStore";
 
 interface ProfileData {
   id: string;
@@ -12,6 +13,7 @@ interface ProfileData {
   address: string | null;
   ci: string | null;
   role: string;
+  preferredCurrency: string | null;
   createdAt: string;
 }
 
@@ -51,6 +53,8 @@ export default function PerfilCuentaPage() {
     }
   };
 
+  const setStoreCurrency = useCurrencyStore((state) => state.setPreferredCurrency);
+
   const handleSave = async (data: Partial<ProfileData>) => {
     setIsSaving(true);
     const res = await fetch("/api/profile", {
@@ -66,6 +70,11 @@ export default function PerfilCuentaPage() {
 
     const updated = await res.json();
     setProfile((prev) => (prev ? { ...prev, ...updated } : prev));
+
+    // Sync store immediately so prices update without waiting for session refresh
+    if (data.preferredCurrency) {
+      setStoreCurrency(data.preferredCurrency as "USD" | "CUP" | "ZELLE");
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -156,6 +165,16 @@ export default function PerfilCuentaPage() {
             <div className="border-b border-gray-200 pb-2">
               <p className="text-sm text-gray-500">CI</p>
               <p className="font-medium">{profile.ci || "No establecido"}</p>
+            </div>
+            <div className="border-b border-gray-200 pb-2">
+              <p className="text-sm text-gray-500">Moneda preferida</p>
+              <p className="font-medium">
+                {profile.preferredCurrency === "CUP"
+                  ? "CUP (Peso Cubano)"
+                  : profile.preferredCurrency === "ZELLE"
+                    ? "ZELLE"
+                    : "USD (Dólar)"}
+              </p>
             </div>
             <div className="pt-2">
               <p className="text-sm text-gray-500">Cliente desde</p>

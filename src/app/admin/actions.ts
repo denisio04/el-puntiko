@@ -450,6 +450,35 @@ export async function getTopProducts() {
   return { topProducts };
 }
 
+export async function getTopViewedProducts() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id || (session.user.role !== "ADMIN" && session.user.role !== "AFFILIATE")) {
+    return { error: "No autorizado" };
+  }
+
+  const topViewed = await prisma.product.findMany({
+    where: { isActive: true },
+    orderBy: { views: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      views: true,
+    },
+  });
+
+  return {
+    topViewedProducts: topViewed.map((p) => ({
+      productId: p.id,
+      name: p.name,
+      image: p.image,
+      views: p.views,
+    })),
+  };
+}
+
 export async function getSalesTrend(days: number = 30) {
   const session = await getServerSession(authOptions);
   
@@ -960,6 +989,25 @@ export async function getWorkers() {
   });
 
   return { workers };
+}
+
+export async function getGlobalCashBox() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+    return { error: "No autorizado" };
+  }
+
+  const result = await prisma.user.aggregate({
+    where: {
+      role: { not: "CUSTOMER" },
+    },
+    _sum: {
+      wallet: true,
+    },
+  });
+
+  return { total: result._sum.wallet || 0 };
 }
 
 export async function payWorker(userId: string, amount: number) {

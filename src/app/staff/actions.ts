@@ -623,3 +623,102 @@ export async function assignDeliveryPerson(
 
   return result;
 }
+
+const CREDIT_TYPES = ["COMMISSION", "PROFIT", "DELIVERY_COMMISSION", "PURCHASE_ORDERS"] as const;
+
+export async function getStaffWalletUsers() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id || session.user.role !== "STAFF") {
+    return { error: "No autorizado" };
+  }
+
+  const users = await prisma.user.findMany({
+    where: { role: { not: "CUSTOMER" } },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      role: true,
+      wallet: true,
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const usersWithLastTx = await Promise.all(
+    users.map(async (user) => {
+      const lastTx = await prisma.walletTransaction.findFirst({
+        where: {
+          userId: user.id,
+          type: { in: [...CREDIT_TYPES] },
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          amount: true,
+          type: true,
+          description: true,
+          createdAt: true,
+        },
+      });
+
+      return {
+        ...user,
+        lastTransaction: lastTx
+          ? {
+              amount: lastTx.amount,
+              type: lastTx.type,
+              description: lastTx.description,
+              createdAt: lastTx.createdAt.toISOString(),
+            }
+          : null,
+      };
+    }),
+  );
+
+  return { users: usersWithLastTx };
+}
+
+export async function getUserWalletTransactions(userId: string) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id || session.user.role !== "STAFF") {
+    return { error: "No autorizado" };
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, name: true, username: true, wallet: true },
+  });
+
+  if (!targetUser || targetUser.role === "CUSTOMER") {
+    return { error: "Usuario no encontrado" };
+  }
+
+  const transactions = await prisma.walletTransaction.findMany({
+    where: {
+      userId,
+      type: { in: [...CREDIT_TYPES] },
+    },
+    include: {
+      order: { select: { orderNumber: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return {
+    user: {
+      name: targetUser.name,
+      username: targetUser.username,
+      role: targetUser.role,
+      wallet: targetUser.wallet,
+    },
+    transactions: transactions.map((tx) => ({
+      id: tx.id,
+      amount: tx.amount,
+      type: tx.type,
+      description: tx.description,
+      orderNumber: tx.order?.orderNumber || null,
+      createdAt: tx.createdAt.toISOString(),
+    })),
+  };
+}

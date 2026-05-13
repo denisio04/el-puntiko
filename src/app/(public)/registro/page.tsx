@@ -11,6 +11,7 @@ type FormData = {
   phone: string;
   ci: string;
   address: string;
+  preferredCurrency: string;
 };
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
@@ -45,6 +46,7 @@ function RegisterForm() {
     phone: "",
     ci: "",
     address: "",
+    preferredCurrency: "USD",
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -107,7 +109,7 @@ function RegisterForm() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -194,6 +196,23 @@ function RegisterForm() {
             required
           />
           {errors.address && <p className={errorClass}>{errors.address}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Moneda preferida</label>
+          <select
+            name="preferredCurrency"
+            value={formData.preferredCurrency}
+            onChange={handleChange}
+            className={inputClass}
+          >
+            <option value="USD">USD (Dólar)</option>
+            <option value="CUP">CUP (Peso Cubano)</option>
+            <option value="ZELLE">ZELLE</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Los precios se mostrarán en esta moneda
+          </p>
         </div>
 
         <div>

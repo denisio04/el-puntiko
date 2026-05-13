@@ -35,6 +35,7 @@ export async function GET() {
         address: true,
         ci: true,
         role: true,
+        preferredCurrency: true,
         createdAt: true,
       },
     });
@@ -59,7 +60,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, phone, address, ci } = body;
+    const { name, phone, address, ci, preferredCurrency } = body;
 
     // Validaciones
     const errors: Record<string, string> = {};
@@ -76,6 +77,10 @@ export async function PUT(request: Request) {
       errors.ci = "CI debe ser texto";
     }
 
+    if (preferredCurrency !== undefined && !["USD", "CUP", "ZELLE"].includes(preferredCurrency)) {
+      errors.ci = "Moneda debe ser USD, CUP o ZELLE";
+    }
+
     if (Object.keys(errors).length > 0) {
       return NextResponse.json({ errors }, { status: 400 });
     }
@@ -85,6 +90,7 @@ export async function PUT(request: Request) {
     if (phone !== undefined) updateData.phone = phone || null;
     if (address !== undefined) updateData.address = address || null;
     if (ci !== undefined) updateData.ci = ci || null;
+    if (preferredCurrency !== undefined) updateData.preferredCurrency = preferredCurrency;
 
     const user = await prisma.user.update({
       where: { id: auth.user.id },
@@ -97,6 +103,7 @@ export async function PUT(request: Request) {
         address: true,
         ci: true,
         role: true,
+        preferredCurrency: true,
         createdAt: true,
       },
     });

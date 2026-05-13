@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
           wallet: user.wallet,
           phone: user.phone || null,
           address: user.address || null,
+          preferredCurrency: user.preferredCurrency || "USD",
         };
       },
     }),
@@ -51,14 +52,16 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.phone = user.phone || null;
         token.address = user.address || null;
+        token.preferredCurrency = user.preferredCurrency || "USD";
       } else if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id },
-          select: { phone: true, address: true },
+          select: { phone: true, address: true, preferredCurrency: true },
         });
         if (dbUser) {
           token.phone = dbUser.phone;
           token.address = dbUser.address;
+          token.preferredCurrency = dbUser.preferredCurrency || "USD";
         }
       }
       return token;
@@ -69,6 +72,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.phone = token.phone || null;
         session.user.address = token.address || null;
+        session.user.preferredCurrency = token.preferredCurrency || "USD";
       }
       return session;
     },

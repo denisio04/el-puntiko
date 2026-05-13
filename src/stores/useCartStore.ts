@@ -28,7 +28,10 @@ function getReferralCodeFromUrl(): string | undefined {
   if (typeof window === "undefined") return undefined;
   const params = new URLSearchParams(window.location.search);
   const ref = params.get("ref");
-  return ref || undefined;
+  if (ref) return ref;
+  // Fallback: leer cookie por si el usuario navegó fuera de la URL de referido
+  const match = document.cookie.match(/(^| )referral_code=([^;]+)/);
+  return match ? decodeURIComponent(match[2]) : undefined;
 }
 
 export const useCartStore = create<CartState>()(

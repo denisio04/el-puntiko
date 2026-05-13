@@ -18,6 +18,8 @@ import Button from "@/components/ui/Button";
 import { useCartStore } from "@/stores/useCartStore";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
 import { useSession } from "next-auth/react";
+import { useCurrency } from "@/hooks/useCurrency";
+import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 
 const WHATSAPP_NUMBER = "5356659558";
 
@@ -37,6 +39,7 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state) => state.clearCart);
   const getTotal = useCartStore((state) => state.getTotal);
   const referralCode = useReferralTracking();
+  const { preferredCurrency, rates } = useCurrency();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,7 +51,6 @@ export default function CheckoutPage() {
     fetch("/api/bonus/progress")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        console.log("Bonus API response:", data);
         if (
           data &&
           data.isActive &&
@@ -334,7 +336,10 @@ export default function CheckoutPage() {
                   <p className="text-sm">Cantidad: {item.quantity}</p>
                   {bonus && bonus.hasReached && item.isBonusProduct && (
                     <p className="text-xs text-green-600">
-                      ${(item.price * (1 - bonus.discountPercent)).toFixed(2)}{" "}
+                      {formatConvertedPrice(
+                        convertPrice(item.price * (1 - bonus.discountPercent), preferredCurrency, rates),
+                        preferredCurrency
+                      )}{" "}
                       c/u
                     </p>
                   )}
@@ -342,11 +347,16 @@ export default function CheckoutPage() {
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <p className="text-lg">
-                      $
-                      {(bonus && bonus.hasReached && item.isBonusProduct
-                        ? item.price * (1 - bonus.discountPercent)
-                        : item.price * item.quantity
-                      ).toFixed(2)}
+                      {formatConvertedPrice(
+                        convertPrice(
+                          bonus && bonus.hasReached && item.isBonusProduct
+                            ? item.price * (1 - bonus.discountPercent)
+                            : item.price * item.quantity,
+                          preferredCurrency,
+                          rates
+                        ),
+                        preferredCurrency
+                      )}
                     </p>
                     <button
                       onClick={() => removeItem(item.id)}
@@ -382,23 +392,43 @@ export default function CheckoutPage() {
                 <>
                   <div className="flex justify-between items-center text-sm mb-2">
                     <span>Subtotal</span>
-                    <span className="line-through">${subtotal.toFixed(2)}</span>
+                    <span className="line-through">
+                      {formatConvertedPrice(
+                        convertPrice(subtotal, preferredCurrency, rates),
+                        preferredCurrency
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-sm text-green-400 mb-2">
                     <span>
                       Descuento {Math.round(bonus.discountPercent * 100)}%
                     </span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span>
+                      -{formatConvertedPrice(
+                        convertPrice(discountAmount, preferredCurrency, rates),
+                        preferredCurrency
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-xl font-black uppercase">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>
+                      {formatConvertedPrice(
+                        convertPrice(total, preferredCurrency, rates),
+                        preferredCurrency
+                      )}
+                    </span>
                   </div>
                 </>
               ) : (
                 <div className="flex justify-between items-center text-xl font-black uppercase">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>
+                    {formatConvertedPrice(
+                      convertPrice(total, preferredCurrency, rates),
+                      preferredCurrency
+                    )}
+                  </span>
                 </div>
               )}
             </div>

@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, X, Users } from "lucide-react";
+import { ArrowLeft, X, Users, Wallet } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { getWorkers, payWorker, payAllWorkers } from "../actions";
+import { getWorkers, payWorker, payAllWorkers, getGlobalCashBox } from "../actions";
 
 interface Worker {
   id: string;
@@ -36,6 +36,7 @@ export default function AdminTrabajadoresPage() {
   const [payAmount, setPayAmount] = useState("");
   const [paying, setPaying] = useState(false);
 
+  const [globalCashBox, setGlobalCashBox] = useState(0);
   const [showPayAllConfirm, setShowPayAllConfirm] = useState(false);
   const [payingAll, setPayingAll] = useState(false);
 
@@ -57,9 +58,13 @@ export default function AdminTrabajadoresPage() {
 
   useEffect(() => {
     if (!mounted || !user) return;
-    getWorkers()
-      .then((data) => {
-        if (data.workers) setWorkers(data.workers);
+    Promise.all([
+      getWorkers(),
+      getGlobalCashBox(),
+    ])
+      .then(([workersData, cashBoxData]) => {
+        if (workersData.workers) setWorkers(workersData.workers);
+        if (cashBoxData.total !== undefined) setGlobalCashBox(cashBoxData.total);
       })
       .finally(() => setLoading(false));
   }, [mounted, user]);
@@ -150,11 +155,16 @@ export default function AdminTrabajadoresPage() {
         </div>
       ) : (
         <>
-          <div className="flex justify-end mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-4">
+            <div className="border-2 border-black px-4 py-2 flex items-center gap-2 font-black text-base sm:text-lg order-1">
+              <Wallet className="w-5 h-5 shrink-0" />
+              <span className="text-sm font-medium text-gray-600">Total en Caja:</span>
+              <span>{formatPrice(globalCashBox)}</span>
+            </div>
             <button
               onClick={() => setShowPayAllConfirm(true)}
               disabled={!hasWorkersWithBalance}
-              className="w-full sm:w-auto px-4 py-2 bg-black text-white border-2 border-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+              className="w-full sm:w-auto px-4 py-2 bg-black text-white border-2 border-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm order-2"
             >
               Vaciar Todas
             </button>

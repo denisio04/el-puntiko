@@ -3,14 +3,33 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Package, Users, DollarSign, ShoppingCart, TrendingUp, AlertTriangle, Calendar } from "lucide-react";
+import {
+  ArrowLeft,
+  Package,
+  Users,
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  AlertTriangle,
+  Calendar,
+  Eye,
+} from "lucide-react";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { TopProductsChart } from "@/components/admin/TopProductsChart";
 import { SalesTrendChart } from "@/components/admin/SalesTrendChart";
 import { LowStockProducts } from "@/components/admin/LowStockProducts";
 import { TopAffiliatesList } from "@/components/admin/TopAffiliatesList";
+import { TopProductsByViewsChart } from "@/components/admin/TopProductsByViewsChart";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { getOrders, getDashboardStats, getTopProducts, getSalesTrend, getLowStockProducts, getTopAffiliates } from "../actions";
+import {
+  getOrders,
+  getDashboardStats,
+  getTopProducts,
+  getSalesTrend,
+  getLowStockProducts,
+  getTopAffiliates,
+  getTopViewedProducts,
+} from "../actions";
 
 interface Order {
   id: string;
@@ -52,6 +71,13 @@ interface TopAffiliate {
   commissionRate: number;
 }
 
+interface TopProductByView {
+  productId: string;
+  name: string;
+  image?: string | null;
+  views: number;
+}
+
 type DateFilter = "7" | "30" | "90";
 
 export default function AdminDashboard() {
@@ -63,9 +89,18 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [salesTrend, setSalesTrend] = useState<SalesData[]>([]);
-  const [salesSummary, setSalesSummary] = useState({ totalRevenue: 0, avgDaily: 0, totalOrders: 0 });
-  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [salesSummary, setSalesSummary] = useState({
+    totalRevenue: 0,
+    avgDaily: 0,
+    totalOrders: 0,
+  });
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>(
+    [],
+  );
   const [topAffiliates, setTopAffiliates] = useState<TopAffiliate[]>([]);
+  const [topViewedProducts, setTopViewedProducts] = useState<
+    TopProductByView[]
+  >([]);
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalSales: 0,
@@ -95,26 +130,38 @@ export default function AdminDashboard() {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      const [ordersData, statsData, productsData, trendData, lowStockData, affiliatesData] = await Promise.all([
+      const [
+        ordersData,
+        statsData,
+        productsData,
+        trendData,
+        lowStockData,
+        affiliatesData,
+        viewedData,
+      ] = await Promise.all([
         getOrders(),
         getDashboardStats(),
         getTopProducts(),
         getSalesTrend(parseInt(dateFilter)),
         getLowStockProducts(),
         getTopAffiliates(),
+        getTopViewedProducts(),
       ]);
-      
+
       if (ordersData.orders) setOrders(ordersData.orders);
       if (statsData.stats) setStats(statsData.stats);
       if (productsData.topProducts) setTopProducts(productsData.topProducts);
-      
+
       if (trendData.trend) {
         setSalesTrend(trendData.trend.data);
         setSalesSummary(trendData.trend.summary);
       }
-      
+
       if (lowStockData.lowStock) setLowStockProducts(lowStockData.lowStock);
-      if (affiliatesData.topAffiliates) setTopAffiliates(affiliatesData.topAffiliates);
+      if (affiliatesData.topAffiliates)
+        setTopAffiliates(affiliatesData.topAffiliates);
+      if (viewedData.topViewedProducts)
+        setTopViewedProducts(viewedData.topViewedProducts);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -131,7 +178,12 @@ export default function AdminDashboard() {
     fetchDashboardData();
   };
 
-  if (!mounted || !hydrated || !user || (user?.role !== "ADMIN" && user?.role !== "AFFILIATE")) {
+  if (
+    !mounted ||
+    !hydrated ||
+    !user ||
+    (user?.role !== "ADMIN" && user?.role !== "AFFILIATE")
+  ) {
     return null;
   }
 
@@ -140,8 +192,12 @@ export default function AdminDashboard() {
       <div className="border-b border-black pb-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <Link href="/admin" className="inline-flex items-center gap-2 hover:bg-black hover:text-white px-2 py-1 mb-2">
-              <ArrowLeft className="w-4 h-4" />Volver
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 hover:bg-black hover:text-white px-2 py-1 mb-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver
             </Link>
             <h1 className="text-3xl sm:text-4xl font-black">DASHBOARD</h1>
           </div>
@@ -171,28 +227,48 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <StatsCard
-          title={<span className="block sm:inline">Pedidos<br className="sm:hidden" /> Totales</span>}
+          title={
+            <span className="block sm:inline">
+              Pedidos
+              <br className="sm:hidden" /> Totales
+            </span>
+          }
           value={stats.totalOrders}
           subtitle="Cantidad total"
           icon={<ShoppingCart className="w-5 h-5" />}
           isCurrency={false}
         />
         <StatsCard
-          title={<span className="block sm:inline">Ventas<br className="sm:hidden" /> Totales</span>}
+          title={
+            <span className="block sm:inline">
+              Ventas
+              <br className="sm:hidden" /> Totales
+            </span>
+          }
           value={stats.totalSales}
           subtitle="Ingresos generados"
           icon={<DollarSign className="w-5 h-5" />}
           isCurrency={true}
         />
         <StatsCard
-          title={<span className="block sm:inline">Pedidos<br className="sm:hidden" /> Pendientes</span>}
+          title={
+            <span className="block sm:inline">
+              Pedidos
+              <br className="sm:hidden" /> Pendientes
+            </span>
+          }
           value={stats.pendingOrders}
           subtitle="Por confirmar"
           icon={<Package className="w-5 h-5" />}
           isCurrency={false}
         />
         <StatsCard
-          title={<span className="block sm:inline">Afiliados<br className="sm:hidden" /> Activos</span>}
+          title={
+            <span className="block sm:inline">
+              Afiliados
+              <br className="sm:hidden" /> Activos
+            </span>
+          }
           value={stats.affiliates}
           subtitle="Total registrados"
           icon={<Users className="w-5 h-5" />}
@@ -207,7 +283,9 @@ export default function AdminDashboard() {
               <TrendingUp className="w-5 h-5" />
               Tendencia de Ventas
             </h2>
-            <span className="text-xs text-gray-500">Últimos {dateFilter} días</span>
+            <span className="text-xs text-gray-500">
+              Últimos {dateFilter} días
+            </span>
           </div>
           <div className="p-4">
             {loading ? (
@@ -224,7 +302,10 @@ export default function AdminDashboard() {
               <AlertTriangle className="w-5 h-5" />
               Bajo Stock
             </h2>
-            <Link href="/admin/productos" className="text-xs text-blue-600 hover:underline">
+            <Link
+              href="/admin/productos"
+              className="text-xs text-blue-600 hover:underline"
+            >
               Ver inventario
             </Link>
           </div>
@@ -245,7 +326,10 @@ export default function AdminDashboard() {
               <TrendingUp className="w-5 h-5" />
               Top 5 Productos Vendidos
             </h2>
-            <Link href="/admin/productos" className="text-xs text-blue-600 hover:underline">
+            <Link
+              href="/admin/productos"
+              className="text-xs text-blue-600 hover:underline"
+            >
               Ver todos
             </Link>
           </div>
@@ -258,13 +342,34 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white border">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="font-semibold flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Top 5 Productos Más Vistos
+              </h2>
+            </div>
+            <div className="p-4">
+              {loading ? (
+                <div className="p-8 text-center text-gray-500">Cargando...</div>
+              ) : (
+                <TopProductsByViewsChart products={topViewedProducts} />
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white border">
           <div className="p-4 border-b flex items-center justify-between">
             <h2 className="font-semibold flex items-center gap-2">
               <Users className="w-5 h-5" />
               Top Afiliados
             </h2>
-            <Link href="/admin/afiliados" className="text-xs text-blue-600 hover:underline">
+            <Link
+              href="/admin/afiliados"
+              className="text-xs text-blue-600 hover:underline"
+            >
               Ver todos
             </Link>
           </div>
@@ -281,7 +386,10 @@ export default function AdminDashboard() {
       <div className="bg-white border">
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="font-semibold">Pedidos Recientes</h2>
-          <Link href="/admin/pedidos" className="text-sm text-blue-600 hover:underline">
+          <Link
+            href="/admin/pedidos"
+            className="text-sm text-blue-600 hover:underline"
+          >
             Ver todos
           </Link>
         </div>
@@ -295,18 +403,26 @@ export default function AdminDashboard() {
               <div key={order.id} className="p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-medium">{order.orderNumber}</span>
-                  <span className={`text-xs px-2 py-1 border ${
-                    order.status === "CONFIRMED" ? "border-green-500 text-green-600" :
-                    order.status === "PENDING" ? "border-yellow-500 text-yellow-600" :
-                    "border-red-500 text-red-600"
-                  }`}>
+                  <span
+                    className={`text-xs px-2 py-1 border ${
+                      order.status === "CONFIRMED"
+                        ? "border-green-500 text-green-600"
+                        : order.status === "PENDING"
+                          ? "border-yellow-500 text-yellow-600"
+                          : "border-red-500 text-red-600"
+                    }`}
+                  >
                     {order.status}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600">{order.customerName}</p>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-sm text-gray-500">{order.customerPhone}</span>
-                  <span className="font-bold">${Number(order.total).toFixed(2)}</span>
+                  <span className="text-sm text-gray-500">
+                    {order.customerPhone}
+                  </span>
+                  <span className="font-bold">
+                    ${Number(order.total).toFixed(2)}
+                  </span>
                 </div>
               </div>
             ))

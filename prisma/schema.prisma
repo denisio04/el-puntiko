@@ -19,6 +19,7 @@ model User {
   wallet    Float    @default(0)
   lastBonusUsedAt DateTime?
   bonusProductsUsed Int      @default(0)
+  preferredCurrency String @default("USD")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -29,6 +30,7 @@ model User {
   ordersAsStaff     Order[]           @relation("StaffOrders")
   ordersAsDelivery  Order[]          @relation("DeliveryOrders")
   transactions      WalletTransaction[] @relation("UserTransactions")
+  productRequests   ProductRequest[]
 
   @@index([ci])
   @@index([role])
@@ -78,18 +80,36 @@ model Product {
   stock       Int      @default(0)
   category    String?
   isActive    Boolean  @default(true)
+  views       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   supplierId String?
   supplier   User?    @relation("SupplierProducts", fields: [supplierId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[]
+  orderItems      OrderItem[]
+  productRequests ProductRequest[]
 
   @@index([slug])
   @@index([category])
   @@index([isActive])
   @@index([supplierId])
   @@map("products")
+}
+
+model ProductRequest {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  status    String   @default("PENDING") // PENDING | NOTIFIED | COMPLETED | CANCELLED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([status])
+  @@map("product_requests")
 }
 
 model Category {
@@ -198,6 +218,8 @@ model Settings {
   deliveryCommissionRate Float  @default(0.20)
   contactStaffId        String?
   contactPhone          String?
+  usdToCupRate          Float   @default(325.0)
+  zelleToCupRate        Float   @default(325.0)
   updatedAt             DateTime @updatedAt
 
   @@map("settings")
