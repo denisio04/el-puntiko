@@ -36,18 +36,9 @@ export async function GET() {
   }
 
   try {
-    const supplier = await prisma.user.findFirst({
-      where: { role: "SUPPLIER" },
-      select: { id: true },
-    });
-
-    if (!supplier) {
-      return NextResponse.json({ error: "Proveedor no encontrado" }, { status: 404 });
-    }
-
     const transactions = await prisma.walletTransaction.findMany({
       where: {
-        userId: supplier.id,
+        userId: auth.user.id,
         type: "PURCHASE_ORDERS",
       },
       orderBy: { createdAt: "desc" },

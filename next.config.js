@@ -12,6 +12,12 @@ const nextConfig = {
       },
     ],
   },
+  output: "standalone",
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
   webpack: (config) => {
     config.infrastructureLogging = { level: "error" };
     return config;

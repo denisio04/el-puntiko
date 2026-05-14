@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
+import { getCachedExchangeRates } from "@/lib/cache";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
-    let settings = await prisma.settings.findUnique({
-      where: { id: "global" },
-    });
+    let settings = await getCachedExchangeRates();
 
     if (!settings) {
       settings = await prisma.settings.create({

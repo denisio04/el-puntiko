@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -13,28 +12,18 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      isAuthenticated: false,
-      user: null,
-      loggingOut: false,
-      login: (user) => {
-        set({ isAuthenticated: true, user });
-      },
-      logout: () => {
-        set({ isAuthenticated: false, user: null });
-      },
-      setLoggingOut: (value) => {
-        set({ loggingOut: value });
-      },
-    }),
-    {
-      name: "auth-storage",
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        isAuthenticated: state.isAuthenticated,
-        user: state.user,
-      }),
-    }
-  )
+  (set) => ({
+    isAuthenticated: false,
+    user: null,
+    loggingOut: false,
+    login: (user) => {
+      set({ isAuthenticated: true, user });
+    },
+    logout: () => {
+      set({ isAuthenticated: false, user: null });
+    },
+    setLoggingOut: (value) => {
+      set({ loggingOut: value });
+    },
+  })
 );

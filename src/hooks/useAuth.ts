@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 
 interface AuthUser {
   id: string;
@@ -18,18 +17,12 @@ interface AuthState {
 }
 
 export const useAuth = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      clearUser: () => set({ user: null, isAuthenticated: false }),
-    }),
-    {
-      name: "auth-storage",
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
+  (set) => ({
+    user: null,
+    isAuthenticated: false,
+    setUser: (user) => set({ user, isAuthenticated: !!user }),
+    clearUser: () => set({ user: null, isAuthenticated: false }),
+  })
 );
 
 export async function login(username: string, password: string) {

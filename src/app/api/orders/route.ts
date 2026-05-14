@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log("API received:", body);
 
     const { notes, items, subtotal, total, usedBonus } = body;
 

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function getAdminWallet() {
   const session = await getServerSession(authOptions);
@@ -198,64 +198,6 @@ if (goingFromConfirmed || (isCancelling && order.status !== "CANCELLED")) {
       await tx.walletTransaction.deleteMany({
         where: { orderId: order.id, type: { in: ["COMMISSION", "DELIVERY_COMMISSION", "PROFIT", "PURCHASE_ORDERS"] } },
       });
-    }
-
-    if (goingFromConfirmed) {
-      if (providerCost > 0) {
-        const supplier = await tx.user.findFirst({ where: { role: "SUPPLIER" } });
-        if (supplier) {
-          await tx.user.update({
-            where: { id: supplier.id },
-            data: { wallet: { decrement: providerCost } },
-          });
-        }
-      }
-
-      const adminTxs = await tx.walletTransaction.findMany({
-        where: { orderId: order.id, type: "PROFIT" },
-      });
-      if (adminTxs.length > 0) {
-        const adminAmt = adminTxs.reduce((s, t) => s + t.amount, 0);
-        const admins = await tx.user.findMany({ where: { role: "ADMIN" } });
-        const share = adminAmt / admins.length;
-        for (const admin of admins) {
-          await tx.user.update({
-            where: { id: admin.id },
-            data: { wallet: { decrement: share } },
-          });
-        }
-      }
-      await tx.walletTransaction.deleteMany({
-        where: { orderId: order.id, type: "PROFIT" },
-      });
-      await tx.walletTransaction.deleteMany({
-        where: { orderId: order.id, type: "PURCHASE_ORDERS" },
-      });
-
-      if (order.deliveryId) {
-        const deliveryTxs = await tx.walletTransaction.findMany({
-          where: { orderId: order.id, type: "DELIVERY_COMMISSION" },
-        });
-        if (deliveryTxs.length > 0) {
-          const deliveryAmount = deliveryTxs.reduce((s, t) => s + t.amount, 0);
-          await tx.user.update({
-            where: { id: order.deliveryId },
-            data: { wallet: { decrement: deliveryAmount } },
-          });
-          await tx.walletTransaction.deleteMany({
-            where: { orderId: order.id, type: "DELIVERY_COMMISSION" },
-          });
-          const deliveryProfile = await tx.deliveryProfile.findUnique({
-            where: { userId: order.deliveryId },
-          });
-          if (deliveryProfile) {
-            await tx.deliveryProfile.update({
-              where: { userId: order.deliveryId },
-              data: { totalDeliveries: { decrement: 1 } },
-            });
-          }
-        }
-      }
     }
 
     if (goingToConfirmed) {

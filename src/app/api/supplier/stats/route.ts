@@ -90,9 +90,16 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.totalSold - a.totalSold)
     .slice(0, 10);
 
+  const orderIds = Array.from(new Set(orderItems.map((item) => item.orderId)));
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds } },
+    select: { id: true, createdAt: true },
+  });
+  const orderMap = new Map(orders.map((o) => [o.id, o]));
+
   const dateMap = new Map<string, { orders: number; revenue: number }>();
   for (const item of orderItems) {
-    const order = await prisma.order.findUnique({ where: { id: item.orderId } });
+    const order = orderMap.get(item.orderId);
     if (order) {
       const date = order.createdAt.toISOString().split("T")[0];
       const existing = dateMap.get(date) || { orders: 0, revenue: 0 };

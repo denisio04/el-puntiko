@@ -36,9 +36,9 @@ export async function GET() {
   }
 
   try {
-    const supplier = await prisma.user.findFirst({
-      where: { role: "SUPPLIER" },
-      select: { id: true, wallet: true, name: true, username: true },
+    const supplier = await prisma.user.findUnique({
+      where: { id: auth.user.id },
+      select: { wallet: true, name: true, username: true },
     });
 
     if (!supplier) {
@@ -46,7 +46,7 @@ export async function GET() {
     }
 
     const transactions = await prisma.walletTransaction.findMany({
-      where: { userId: supplier.id },
+      where: { userId: auth.user.id },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cantidad inválida" }, { status: 400 });
     }
 
-    const supplier = await prisma.user.findFirst({
-      where: { role: "SUPPLIER" },
+    const supplier = await prisma.user.findUnique({
+      where: { id: auth.user.id },
       select: { id: true, wallet: true },
     });
 
@@ -94,14 +94,14 @@ export async function POST(request: NextRequest) {
     }
 
     const updated = await prisma.user.update({
-      where: { id: supplier.id },
+      where: { id: auth.user.id },
       data: { wallet: { decrement: amount } },
       select: { wallet: true },
     });
 
     await prisma.walletTransaction.create({
       data: {
-        userId: supplier.id,
+        userId: auth.user.id,
         amount: -amount,
         type: "WITHDRAW",
         description: "Retiro de wallet",

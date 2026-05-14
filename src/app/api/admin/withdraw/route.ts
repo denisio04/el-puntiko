@@ -20,21 +20,24 @@ export async function POST(request: NextRequest) {
 
     const adminId = auth.user.id;
 
-    const admin = await prisma.user.findFirst({
-      where: { id: adminId, role: "ADMIN" },
-    });
+    const updated = await prisma.$transaction(async (tx) => {
+      const admin = await tx.user.findFirst({
+        where: { id: adminId, role: "ADMIN" },
+      });
 
-    if (!admin) {
-      return NextResponse.json({ error: "Admin no encontrado" }, { status: 404 });
-    }
+      if (!admin) {
+        throw new Error("Admin no encontrado");
+      }
 
-    if (admin.wallet < amount) {
-      return NextResponse.json({ error: "Fondos insuficientes" }, { status: 400 });
-    }
+      if (admin.wallet < amount) {
+        throw new Error("Fondos insuficientes");
+      }
 
-    const updated = await prisma.user.update({
-      where: { id: admin.id },
-      data: { wallet: admin.wallet - amount },
+      return tx.user.update({
+        where: { id: adminId },
+        data: { wallet: { decrement: amount } },
+        select: { wallet: true },
+      });
     });
 
     return NextResponse.json({ wallet: updated.wallet });

@@ -24,7 +24,7 @@ function setCookie(
     encodeURIComponent(value) +
     ";expires=" +
     expires.toUTCString() +
-    ";path=/;SameSite=Lax;httpOnly";
+    ";path=/;SameSite=Lax";
 }
 
 function sanitizeRefCode(code: string): string {

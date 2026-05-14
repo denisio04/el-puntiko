@@ -6,14 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push": "npx prisma db push",
+    "db:generate": "npx prisma generate",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "npx prisma studio",
+    "db:migrate": "npx tsx prisma/migrate-to-supabase.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.47.0",
     "@types/bcryptjs": "^2.4.6",
     "autoprefixer": "^10.5.0",
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.11.0",
     "next": "^14.2.18",
@@ -24,7 +28,6 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

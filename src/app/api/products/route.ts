@@ -12,10 +12,17 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = { isActive: true };
 
     if (searchQuery) {
+      const isPostgres = process.env.DATABASE_URL?.startsWith("postgresql");
+      const searchFilter = <T extends Record<string, unknown>>(field: string, query: string): T => {
+        if (isPostgres) {
+          return { [field]: { contains: query, mode: "insensitive" } } as T;
+        }
+        return { [field]: { contains: query } } as T;
+      };
       where.OR = [
-        { name: { contains: searchQuery } },
-        { description: { contains: searchQuery } },
-        { category: { contains: searchQuery } },
+        searchFilter("name", searchQuery),
+        searchFilter("description", searchQuery),
+        searchFilter("category", searchQuery),
       ];
     }
 

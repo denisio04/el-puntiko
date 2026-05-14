@@ -26,6 +26,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Nombre, slug y precio son requeridos" }, { status: 400 });
     }
 
+    if (typeof price !== "number" || price <= 0) {
+      return NextResponse.json({ error: "El precio debe ser mayor que 0" }, { status: 400 });
+    }
+
+    if (stock !== undefined && (typeof stock !== "number" || stock < 0)) {
+      return NextResponse.json({ error: "El stock no puede ser negativo" }, { status: 400 });
+    }
+
     const existingProduct = await prisma.product.findUnique({
       where: { slug },
     });
@@ -65,6 +73,14 @@ export async function PUT(request: Request) {
 
     if (!id) {
       return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+    }
+
+    if (price !== undefined && (typeof price !== "number" || price <= 0)) {
+      return NextResponse.json({ error: "El precio debe ser mayor que 0" }, { status: 400 });
+    }
+
+    if (stock !== undefined && (typeof stock !== "number" || stock < 0)) {
+      return NextResponse.json({ error: "El stock no puede ser negativo" }, { status: 400 });
     }
 
     const updateData: Record<string, unknown> = {};
