@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { sanitizeText } from "@/lib/sanitize";
 
 export const dynamic = 'force-dynamic';
 
@@ -86,7 +87,7 @@ export async function PUT(request: Request) {
     }
 
     const updateData: Record<string, string | null> = {};
-    if (name !== undefined) updateData.name = name || null;
+    if (name !== undefined) updateData.name = name ? sanitizeText(name) : null;
     if (phone !== undefined) updateData.phone = phone || null;
     if (address !== undefined) updateData.address = address || null;
     if (ci !== undefined) updateData.ci = ci || null;

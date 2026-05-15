@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -40,6 +41,21 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const rl = rateLimit(`admin-settings:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id || session.user.role !== "ADMIN") {

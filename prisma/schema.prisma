@@ -31,6 +31,7 @@ model User {
   ordersAsDelivery  Order[]          @relation("DeliveryOrders")
   transactions      WalletTransaction[] @relation("UserTransactions")
   productRequests   ProductRequest[]
+  cartReservations  CartReservation[]
 
   @@index([ci])
   @@index([role])
@@ -88,12 +89,31 @@ model Product {
   supplier   User?    @relation("SupplierProducts", fields: [supplierId], references: [id], onDelete: Cascade)
   orderItems      OrderItem[]
   productRequests ProductRequest[]
+  cartReservations CartReservation[]
 
   @@index([slug])
   @@index([category])
   @@index([isActive])
   @@index([supplierId])
   @@map("products")
+}
+
+model CartReservation {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  quantity  Int      @default(1)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("cart_reservations")
 }
 
 model ProductRequest {

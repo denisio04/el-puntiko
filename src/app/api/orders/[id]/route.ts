@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 import { ORDER_STATUS } from "@/lib/constants";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -49,10 +50,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
       if (oldStatus === "CONFIRMED" && status !== "CONFIRMED") {
         if (order.customerId && !order.usedBonus) {
-          await tx.user.update({
+          const customer = await tx.user.findUnique({
             where: { id: order.customerId },
-            data: { bonusProductsUsed: { decrement: 1 } },
+            select: { bonusProductsUsed: true },
           });
+          if (customer && customer.bonusProductsUsed > 0) {
+            await tx.user.update({
+              where: { id: order.customerId },
+              data: { bonusProductsUsed: { decrement: 1 } },
+            });
+          }
         }
         const deliveryTransactions = await tx.walletTransaction.findMany({
           where: { orderId: order.id, type: "DELIVERY_COMMISSION" },
@@ -305,16 +312,28 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           });
         }
         if (order.customerId && !order.usedBonus) {
-          await tx.user.update({
+          const customer = await tx.user.findUnique({
             where: { id: order.customerId },
-            data: { bonusProductsUsed: { decrement: 1 } },
+            select: { bonusProductsUsed: true },
           });
+          if (customer && customer.bonusProductsUsed > 0) {
+            await tx.user.update({
+              where: { id: order.customerId },
+              data: { bonusProductsUsed: { decrement: 1 } },
+            });
+          }
         }
       }
 
       return updated;
     });
 
+    logSecurityEvent("order_status_changed", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      fromStatus: oldStatus,
+      toStatus: updatedOrder.status,
+    });
     return NextResponse.json(updatedOrder);
   } catch (error) {
     console.error("Error updating order:", error);

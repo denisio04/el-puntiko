@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useCurrency } from "@/hooks/useCurrency";
 import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 import { useSession } from "next-auth/react";
+import { useStockRealtime } from "@/hooks/useStockRealtime";
 
 interface Product {
   id: string;
@@ -16,6 +17,7 @@ interface Product {
   slug: string;
   price: number;
   stock: number;
+  availableStock?: number;
   purchasePrice?: number | null;
   image?: string | null;
   salesCount?: number;
@@ -61,7 +63,7 @@ export function ProductCard({
   const isDisabled =
     otherHasBonus || (!isEligible && hasBonusInCart) || thisHasBonus;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (added || isDisabled) return;
@@ -83,6 +85,15 @@ export function ProductCard({
         image: product.image ?? undefined,
       });
     }
+
+    if (session?.user?.id) {
+      fetch("/api/cart/reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ productId: product.id, quantity: 1 }] }),
+      }).catch(() => {});
+    }
+
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -126,7 +137,10 @@ export function ProductCard({
     ? `${Math.round(discountPercent * 100)}%`
     : null;
 
-  const isOutOfStock = product.stock === 0;
+  const stockMap = useStockRealtime();
+  const liveStock = stockMap.get(product.id);
+  const displayStock = liveStock ?? product.availableStock ?? product.stock;
+  const isOutOfStock = displayStock === 0;
 
   let buttonLabel = "AÑADIR";
   if (isOutOfStock) {
@@ -168,9 +182,13 @@ export function ProductCard({
               {product.salesCount} vendido{product.salesCount !== 1 ? "s" : ""}
             </span>
           )}
-          {product.stock > 0 && product.stock < 5 && (
+          {displayStock === 0 ? (
             <span className="absolute top-2 right-2 bg-black text-white text-xs font-bold px-2 py-1 z-10">
-              QUEDAN {product.stock}
+              SIN STOCK
+            </span>
+          ) : displayStock <= 5 && (
+            <span className="absolute top-2 right-2 bg-black text-white text-xs font-bold px-2 py-1 z-10">
+              QUEDAN {displayStock}
             </span>
           )}
         </div>

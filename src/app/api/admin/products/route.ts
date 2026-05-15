@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -16,6 +17,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`admin-products:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();
   try {
@@ -65,6 +81,21 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const rl = rateLimit(`admin-products:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();
   try {

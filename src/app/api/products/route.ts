@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getReservedCountsByProduct, computeAvailableStock } from "@/lib/stock";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,11 +41,17 @@ export async function GET(request: NextRequest) {
       orderBy = { createdAt: "desc" };
     }
 
-    const products = await prisma.product.findMany({
-      where,
-      orderBy,
-    });
-    return NextResponse.json(products);
+    const [products, reservedCounts] = await Promise.all([
+      prisma.product.findMany({ where, orderBy }),
+      getReservedCountsByProduct(),
+    ]);
+
+    const result = products.map((p) => ({
+      ...p,
+      availableStock: computeAvailableStock(p.stock, reservedCounts, p.id),
+    }));
+
+    return NextResponse.json(result);
   } catch {
     return NextResponse.json(
       { error: "Error fetching products" },

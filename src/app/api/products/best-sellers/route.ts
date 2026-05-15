@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getReservedCountsByProduct, computeAvailableStock } from "@/lib/stock";
 
 export async function GET() {
   try {
@@ -20,9 +21,10 @@ export async function GET() {
 
     const productIds = sales.map((s) => s.productId);
 
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds }, isActive: true },
-    });
+    const [products, reservedCounts] = await Promise.all([
+      prisma.product.findMany({ where: { id: { in: productIds }, isActive: true } }),
+      getReservedCountsByProduct(),
+    ]);
 
     const salesMap = new Map(
       sales.map((s) => [s.productId, s._sum.quantity ?? 0])
@@ -32,6 +34,7 @@ export async function GET() {
       .map((product) => ({
         ...product,
         salesCount: salesMap.get(product.id) ?? 0,
+        availableStock: computeAvailableStock(product.stock, reservedCounts, product.id),
       }))
       .sort((a, b) => b.salesCount - a.salesCount);
 

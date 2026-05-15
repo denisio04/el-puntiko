@@ -1,30 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= MAX_ATTEMPTS) return false;
-  entry.count++;
-  return true;
-}
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 export async function POST(request: Request) {
-  try {
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json({ error: "Demasiados intentos. Intenta en 15 minutos." }, { status: 429 });
-    }
+  const rl = rateLimit(`login:${getRateLimitKey(request)}`, 5, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiados intentos. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "5",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
 
+  try {
     const body = await request.json();
     const { username, password } = body;
 
@@ -35,12 +31,14 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
+      logSecurityEvent("failed_login", { username, reason: "user_not_found" });
       return NextResponse.json({ error: "Usuario o contraseña incorrectos" }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+      logSecurityEvent("failed_login", { username, reason: "invalid_password" });
       return NextResponse.json({ error: "Usuario o contraseña incorrectos" }, { status: 401 });
     }
 
@@ -51,7 +49,6 @@ export async function POST(request: Request) {
         username: user.username,
         name: user.name,
         role: user.role,
-        wallet: user.wallet,
       },
     });
   } catch {

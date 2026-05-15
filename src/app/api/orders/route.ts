@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
+import { broadcastStockUpdate } from "@/lib/stock";
 
 async function getAuthFromRequest(): Promise<{ user: { id: string; role: string } } | null> {
   try {
@@ -60,6 +62,21 @@ export async function GET() {
 // --- POST: crear orden (público, pero con validaciones) ---
 
 export async function POST(request: NextRequest) {
+  const rl = rateLimit(`orders:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   try {
     const auth = await getAuthFromRequest();
     if (!auth) {
@@ -239,6 +256,18 @@ export async function POST(request: NextRequest) {
 
       return newOrder;
     });
+
+    await prisma.cartReservation.deleteMany({
+      where: {
+        userId: auth.user.id,
+        productId: { in: productIds },
+      },
+    });
+
+    const broadcastPromises = productIds.map((pid: string) =>
+      broadcastStockUpdate(pid).catch(() => {})
+    );
+    Promise.all(broadcastPromises).catch(() => {});
 
     console.log("Order created:", order.id);
 

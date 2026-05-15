@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= MAX_ATTEMPTS) return false;
-  entry.count++;
-  return true;
-}
+import { sanitizeText } from "@/lib/sanitize";
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 export async function POST(request: NextRequest) {
+  const rl = rateLimit(`register:${getRateLimitKey(request)}`, 5, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiados intentos. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "5",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   try {
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
     if (!checkRateLimit(ip)) {
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
       data: {
         username,
         password: hashedPassword,
-        name: name || username,
+        name: sanitizeText(name || username),
         phone: phone || null,
         ci: ci || null,
         address: address || null,
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    logSecurityEvent("user_registered", { userId: user.id, username: user.username });
     return NextResponse.json({ success: true, user }, { status: 201 });
   } catch (error) {
     console.error("Error registering user:", error);

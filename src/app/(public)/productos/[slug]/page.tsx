@@ -7,6 +7,7 @@ import { ShoppingCart, ArrowLeft } from "lucide-react";
 import { useCartStore } from "@/stores/useCartStore";
 import { useSession } from "next-auth/react";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useStockRealtime } from "@/hooks/useStockRealtime";
 import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 
 interface Product {
@@ -14,6 +15,7 @@ interface Product {
   name: string;
   price: number;
   stock: number;
+  availableStock?: number;
   purchasePrice: number | null;
   description: string | null;
   category: string | null;
@@ -25,6 +27,7 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const { preferredCurrency, rates } = useCurrency();
+  const stockMap = useStockRealtime();
   const addItem = useCartStore((state) => state.addItem);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +92,15 @@ export default function ProductDetailPage() {
       purchasePrice: product.purchasePrice ?? undefined,
       image: product.image ?? undefined,
     });
+
+    if (session?.user?.id) {
+      fetch("/api/cart/reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ productId: product.id, quantity: 1 }] }),
+      }).catch(() => {});
+    }
+
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -162,20 +174,28 @@ export default function ProductDetailPage() {
             )}
           </p>
 
-          {product.stock > 0 && product.stock < 5 && (
-            <span className="inline-block bg-black text-white text-sm font-bold px-3 py-1 mb-4">
-              QUEDAN {product.stock}
-            </span>
-          )}
-          {product.stock === 0 && (
-            <span className="inline-block bg-red-600 text-white text-sm font-bold px-3 py-1 mb-4">
-              AGOTADO
-            </span>
-          )}
+          {(() => {
+            const availStock = stockMap.get(product.id) ?? product.availableStock ?? product.stock;
+            if (availStock > 0 && availStock < 5) {
+              return (
+                <span className="inline-block bg-black text-white text-sm font-bold px-3 py-1 mb-4">
+                  QUEDAN {availStock}
+                </span>
+              );
+            }
+            if (availStock === 0) {
+              return (
+                <span className="inline-block bg-black text-white text-sm font-bold px-3 py-1 mb-4">
+                  SIN STOCK
+                </span>
+              );
+            }
+            return null;
+          })()}
 
           <p className="text-base md:text-lg mb-8 md:mb-12 max-w-md">{product.description}</p>
           
-          {product.stock === 0 ? (
+          {(stockMap.get(product.id) ?? product.availableStock ?? product.stock) === 0 ? (
             <button
               onClick={handleRequestProduct}
               className={`w-full lg:w-auto px-8 py-4 text-lg font-medium flex items-center justify-center ${

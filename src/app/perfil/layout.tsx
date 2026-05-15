@@ -53,17 +53,17 @@ export default function PerfilLayout({
             </Link>
           ))}
         </nav>
-        <div className="pt-4 border-t border-gray-700 space-y-2">
+        <div className="flex flex-col justify-between h-2/3 pt-4 border-t border-gray-700 space-y-2">
           <Link
             href="/"
             className="block w-full text-center px-3 py-2 border border-white hover:bg-white hover:text-black"
           >
             Volver a la Tienda
           </Link>
-          <p className="text-sm text-gray-400">{user?.name}</p>
+
           <button
             onClick={handleLogout}
-            className="text-sm hover:underline text-gray-300"
+            className="ml-30 text-sm hover:underline text-gray-300"
           >
             Cerrar Sesión
           </button>
@@ -134,7 +134,9 @@ export default function PerfilLayout({
         </nav>
       )}
 
-      <main className={`flex-1 pt-14 md:pt-0 md:ml-64 ${menuOpen ? "mt-48" : ""}`}>
+      <main
+        className={`flex-1 pt-14 md:pt-0 md:ml-64 ${menuOpen ? "mt-48" : ""}`}
+      >
         {children}
       </main>
     </div>

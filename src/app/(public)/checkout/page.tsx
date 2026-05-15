@@ -99,6 +99,41 @@ export default function CheckoutPage() {
     );
   }
 
+  const handleRemoveItem = (itemId: string) => {
+    removeItem(itemId);
+    if (session?.user?.id) {
+      fetch("/api/cart/reserve", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ productId: itemId }] }),
+      }).catch(() => {});
+    }
+  };
+
+  const handleUpdateQuantity = (itemId: string, newQty: number) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const diff = newQty - item.quantity;
+    updateQuantity(itemId, newQty);
+
+    if (session?.user?.id && diff !== 0) {
+      if (diff > 0) {
+        fetch("/api/cart/reserve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: [{ productId: itemId, quantity: diff }] }),
+        }).catch(() => {});
+      } else {
+        fetch("/api/cart/reserve", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: [{ productId: itemId, quantity: Math.abs(diff) }] }),
+        }).catch(() => {});
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -152,7 +187,7 @@ export default function CheckoutPage() {
 
       if (bonus && bonus.discountPercent > 0) {
         message += `\n*Subtotal:* $${subtotal.toFixed(2)}\n`;
-        message += `*Descuento ${Math.round(bonus.discountPercent * 100)}%:* -$${discountAmount.toFixed(2)}\n`;
+        message += `*Descuento ${Math.round(bonus.discountPercent * 100)}:* -$${discountAmount.toFixed(2)}\n`;
       }
       message += `\n*Total:* $${total.toFixed(2)}\n`;
 
@@ -359,7 +394,7 @@ export default function CheckoutPage() {
                       )}
                     </p>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveItem(item.id)}
                       className="p-2 hover:bg-black hover:text-white"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -367,7 +402,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex items-center gap-0">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                       disabled={item.isBonusProduct}
                       className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
                     >
@@ -377,7 +412,7 @@ export default function CheckoutPage() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                       disabled={item.isBonusProduct}
                       className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
                     >

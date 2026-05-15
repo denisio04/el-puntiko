@@ -3,6 +3,17 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { type UserRole } from "./constants";
+import { rateLimit } from "./rateLimit";
+import { logSecurityEvent } from "./securityLog";
+
+function extractIP(headers: Record<string, string | undefined> | undefined): string {
+  if (!headers) return "127.0.0.1";
+  const forwarded = headers["x-forwarded-for"];
+  if (forwarded) return forwarded.split(",")[0].trim();
+  const realIp = headers["x-real-ip"];
+  if (realIp) return realIp;
+  return "127.0.0.1";
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,9 +23,22 @@ export const authOptions: NextAuthOptions = {
         username: { label: "Usuario", type: "text" },
         password: { label: "Contraseña", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
           throw new Error("Usuario y contraseña son requeridos");
+        }
+
+        const ip = extractIP((req as { headers?: Record<string, string | undefined> })?.headers);
+        const rl = rateLimit(`login:${ip}`, 5, 60000);
+        if (!rl.allowed) {
+          logSecurityEvent("rate_limited_login", {
+            username: credentials.username,
+            ip,
+            retryAfter: rl.retryAfter,
+          });
+          throw new Error(
+            `Demasiados intentos. Intenta de nuevo en ${rl.retryAfter} segundos.`
+          );
         }
 
         const user = await prisma.user.findFirst({
@@ -22,12 +46,20 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
+          logSecurityEvent("failed_login", {
+            username: credentials.username,
+            reason: "user_not_found",
+          });
           throw new Error("Credenciales inválidas");
         }
 
         const isValidPassword = await compare(credentials.password, user.password);
 
         if (!isValidPassword) {
+          logSecurityEvent("failed_login", {
+            username: credentials.username,
+            reason: "invalid_password",
+          });
           throw new Error("Credenciales inválidas");
         }
 

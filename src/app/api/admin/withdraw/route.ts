@@ -1,8 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 export async function POST(request: NextRequest) {
+  const rl = rateLimit(`withdraw:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();
 
@@ -40,6 +57,16 @@ export async function POST(request: NextRequest) {
       });
     });
 
+    await prisma.walletTransaction.create({
+      data: {
+        userId: admin.id,
+        amount: -amount,
+        type: "WITHDRAWAL",
+        description: "Retiro de wallet",
+      },
+    });
+
+    logSecurityEvent("withdrawal", { adminId: admin.id, amount });
     return NextResponse.json({ wallet: updated.wallet });
   } catch (error) {
     console.error("Error withdrawing:", error);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getReservedCountsByProduct, computeAvailableStock } from "@/lib/stock";
 
 export async function GET(
   request: NextRequest,
@@ -17,7 +18,12 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(product);
+    const reservedCounts = await getReservedCountsByProduct();
+
+    return NextResponse.json({
+      ...product,
+      availableStock: computeAvailableStock(product.stock, reservedCounts, product.id),
+    });
   } catch {
     return NextResponse.json(
       { error: "Error al obtener el producto" },

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
+import { logSecurityEvent } from "@/lib/securityLog";
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -26,6 +28,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`admin-users:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();
   try {
@@ -50,7 +67,7 @@ export async function POST(request: Request) {
 
     const validRoles = ["ADMIN", "AFFILIATE", "SUPPLIER", "DELIVERY", "STAFF"];
     const userRole = validRoles.includes(role) ? role : "AFFILIATE";
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
       data: {
@@ -92,6 +109,7 @@ export async function POST(request: Request) {
       });
     }
 
+    logSecurityEvent("user_created", { userId: user.id, username: user.username, role: userRole });
     return NextResponse.json(user);
   } catch (error) {
     console.error("Error creating user:", error);
@@ -100,6 +118,21 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const rl = rateLimit(`admin-users:${getRateLimitKey(request)}`, 10, 60000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Demasiadas solicitudes. Intenta de nuevo en ${rl.retryAfter} segundos.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfter),
+          "X-RateLimit-Limit": "10",
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();
   try {
@@ -116,7 +149,7 @@ export async function PUT(request: Request) {
     if (typeof wallet === "number" && wallet >= 0) updateData.wallet = wallet;
 
     if (password && password.length >= 6) {
-      updateData.password = await bcrypt.hash(password, 10);
+      updateData.password = await bcrypt.hash(password, 12);
     }
 
     const currentUser = await prisma.user.findUnique({ where: { id } });
@@ -151,6 +184,7 @@ export async function PUT(request: Request) {
       }
     }
 
+    logSecurityEvent("user_updated", { userId: user.id, username: user.username, role: user.role });
     return NextResponse.json(user);
   } catch (error) {
     console.error("Error updating user:", error);
@@ -185,6 +219,7 @@ export async function DELETE(request: Request) {
     await prisma.deliveryProfile.deleteMany({ where: { userId: id } });
     await prisma.user.delete({ where: { id } });
 
+    logSecurityEvent("user_deleted", { userId: id, username: userToDelete.username, role: userToDelete.role });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting user:", error);

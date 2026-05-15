@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   getAdminProducts,
   createProduct,
@@ -842,44 +843,12 @@ export default function ProductosPage() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Imagen (URL)
-                    </label>
-                    <div className="flex flex-col gap-3 md:gap-4">
-                      <input
-                        type="url"
-                        value={productForm.image}
-                        onChange={(e) =>
-                          setProductForm({
-                            ...productForm,
-                            image: e.target.value,
-                          })
-                        }
-                        placeholder="https://..."
-                        className="w-full px-3 py-2 md:px-4 md:py-3 border border-black focus:outline-none text-base md:text-lg"
-                      />
-                      {productForm.image && (
-                        <div className="w-full max-w-[150px] md:max-w-[200px] h-[150px] md:h-[200px] relative border border-black bg-gray-50 mx-auto">
-                          <Image
-                            src={productForm.image}
-                            alt="Preview"
-                            fill
-                            className="object-contain"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setProductForm({ ...productForm, image: "" })
-                            }
-                            className="absolute -top-2 -right-2 bg-black text-white w-6 h-6 flex items-center justify-center"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <ImageUpload
+                    currentImage={productForm.image}
+                    onImageUrl={(url) =>
+                      setProductForm({ ...productForm, image: url })
+                    }
+                  />
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -920,23 +889,12 @@ export default function ProductosPage() {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Imagen (URL)
-                    </label>
-                    <input
-                      type="url"
-                      value={categoryForm.image}
-                      onChange={(e) =>
-                        setCategoryForm({
-                          ...categoryForm,
-                          image: e.target.value,
-                        })
-                      }
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 md:px-4 md:py-3 border border-black focus:outline-none text-base md:text-lg"
-                    />
-                  </div>
+                  <ImageUpload
+                    currentImage={categoryForm.image}
+                    onImageUrl={(url) =>
+                      setCategoryForm({ ...categoryForm, image: url })
+                    }
+                  />
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"

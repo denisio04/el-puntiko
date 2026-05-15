@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { supabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase";
+import { optimizeImage } from "@/lib/imageOptimizer";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 
 export async function POST(request: Request) {
   const auth = await requireAdmin();
@@ -25,26 +23,48 @@ export async function POST(request: Request) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "Archivo muy grande (máx 5MB)" }, { status: 400 });
-    }
-
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
+      return NextResponse.json({ error: "Archivo muy grande (máx 10MB)" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const originalBuffer = Buffer.from(bytes);
 
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${safeExt}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
+    const optimized = await optimizeImage(originalBuffer);
 
-    await writeFile(filePath, buffer);
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+    const filePath = `products/${fileName}`;
 
-    const url = `/uploads/${fileName}`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, optimized.buffer, {
+        contentType: "image/webp",
+        cacheControl: "31536000",
+        upsert: false,
+      });
 
-    return NextResponse.json({ success: true, url });
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError);
+      return NextResponse.json({ error: "Error al subir el archivo" }, { status: 500 });
+    }
+
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filePath);
+
+    const url = publicUrlData.publicUrl;
+
+    return NextResponse.json({
+      success: true,
+      url,
+      optimized: {
+        format: optimized.format,
+        width: optimized.width,
+        height: optimized.height,
+        originalSize: file.size,
+        optimizedSize: optimized.size,
+        savingPercent: Math.round((1 - optimized.size / file.size) * 100),
+      },
+    });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Error uploading file" }, { status: 500 });
