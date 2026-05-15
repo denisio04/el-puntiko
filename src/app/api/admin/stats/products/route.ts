@@ -15,20 +15,22 @@ export async function GET() {
       take: 5,
     });
 
-    const productsWithDetails = await Promise.all(
-      topProducts.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { name: true, image: true },
-        });
-        return {
-          productId: item.productId,
-          name: product?.name || "Producto eliminado",
-          image: product?.image,
-          totalSold: item._sum.quantity || 0,
-        };
-      })
-    );
+    const productIds = topProducts.map((item) => item.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, image: true },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const productsWithDetails = topProducts.map((item) => {
+      const product = productMap.get(item.productId);
+      return {
+        productId: item.productId,
+        name: product?.name || "Producto eliminado",
+        image: product?.image,
+        totalSold: item._sum.quantity || 0,
+      };
+    });
 
     return NextResponse.json(productsWithDetails);
   } catch (error) {

@@ -59,14 +59,14 @@ export async function POST(request: NextRequest) {
 
     await prisma.walletTransaction.create({
       data: {
-        userId: admin.id,
+        userId: adminId,
         amount: -amount,
         type: "WITHDRAWAL",
         description: "Retiro de wallet",
       },
     });
 
-    logSecurityEvent("withdrawal", { adminId: admin.id, amount });
+    logSecurityEvent("withdrawal", { adminId, amount });
     return NextResponse.json({ wallet: updated.wallet });
   } catch (error) {
     console.error("Error withdrawing:", error);
