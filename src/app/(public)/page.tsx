@@ -102,7 +102,7 @@ export default function HomePage() {
         setCategories(cats);
         setProducts(prods);
         setLoading(false);
-      }
+      },
     );
   }, [searchQuery]);
 
@@ -136,7 +136,7 @@ export default function HomePage() {
   const productsByCategory: Record<string, Product[]> = {};
   categories.forEach((cat) => {
     productsByCategory[cat.name] = products.filter(
-      (p) => p.category === cat.name
+      (p) => p.category === cat.name,
     );
   });
 
@@ -158,12 +158,13 @@ export default function HomePage() {
       </section>
 
       {!searchQuery && (
-        <div className="flex overflow-x-auto border-b border-black">
+        //cambiar el grid-cols-... segun numero de tabs
+        <div className="grid grid-cols-3 border-b border-black">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 md:flex-1 px-4 md:px-6 py-3 font-bold text-sm border-r border-black last:border-r-0 transition-colors whitespace-nowrap ${
+              className={`px-4 md:px-6 py-3 font-bold text-sm border-r border-l border-black first:border-r-0 last:border-l-0 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? "bg-black text-white"
                   : "bg-white text-black hover:bg-gray-100"
@@ -209,7 +210,7 @@ export default function HomePage() {
                     <p className="font-black mt-1">
                       {formatConvertedPrice(
                         convertPrice(product.price, preferredCurrency, rates),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </p>
                   </Link>
