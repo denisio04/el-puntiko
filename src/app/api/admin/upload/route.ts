@@ -3,6 +3,8 @@ import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { supabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase";
 import { optimizeImage } from "@/lib/imageOptimizer";
 
+export const dynamic = 'force-dynamic';
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 

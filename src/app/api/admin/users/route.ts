@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 import { logSecurityEvent } from "@/lib/securityLog";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();

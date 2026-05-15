@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { broadcastStockUpdate } from "@/lib/stock";
 
+export const dynamic = 'force-dynamic';
+
 async function getAuthUserId(): Promise<string | null> {
   try {
     const session = await getServerSession(authOptions);

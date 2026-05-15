@@ -3,6 +3,8 @@ import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const auth = await requireAdmin();
   if (!auth) return adminUnauthorized();

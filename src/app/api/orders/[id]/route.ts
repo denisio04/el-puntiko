@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { ORDER_STATUS } from "@/lib/constants";
 import { logSecurityEvent } from "@/lib/securityLog";
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await requireAdmin();

@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/authOptions";
 import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 import { broadcastStockUpdate } from "@/lib/stock";
 
+export const dynamic = 'force-dynamic';
+
 async function getAuthFromRequest(): Promise<{ user: { id: string; role: string } } | null> {
   try {
     const session = await getServerSession(authOptions);

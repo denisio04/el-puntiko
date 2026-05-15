@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireStaff, adminUnauthorized } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const auth = await requireStaff();

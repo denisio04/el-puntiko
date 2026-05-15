@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 function generateOrderNumber(): string {
   return `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 }

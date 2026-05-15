@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 import { logSecurityEvent } from "@/lib/securityLog";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const rl = rateLimit(`withdraw:${getRateLimitKey(request)}`, 10, 60000);
   if (!rl.allowed) {
