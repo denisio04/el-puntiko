@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { sanitizeText } from "@/lib/sanitize";
 import { rateLimit, getRateLimitKey } from "@/lib/rateLimit";
 import { logSecurityEvent } from "@/lib/securityLog";
