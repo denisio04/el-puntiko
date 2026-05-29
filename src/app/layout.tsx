@@ -8,12 +8,12 @@ export const metadata: Metadata = {
   description: "Tienda online - Pago contra reembolso",
   icons: {
     icon: "/favicon.png",
-    apple: "/favicon1.png",
+    apple: "/logo-app.png",
   },
   openGraph: {
     title: "EL PUNTIKO.",
     description: "Tienda online - Pago contra reembolso",
-    images: ["/favicon1.png"],
+    images: ["/logo-app.png"],
   },
   other: {
     "googlebot": "notranslate",
