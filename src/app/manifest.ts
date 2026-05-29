@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "EL PUNTIKO.",
-    short_name: "PUNTIKO",
+    short_name: "EL PUNTIKO.",
     description: "Tienda online - Pago contra reembolso",
     start_url: "/",
     display: "standalone",
