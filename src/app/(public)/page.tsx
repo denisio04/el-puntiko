@@ -144,17 +144,28 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <section className="py-12 md:py-20 lg:py-24 px-4 md:px-6 border-b border-black">
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-4 md:mb-6 leading-tight">
-          DISPONIBLE
-          <br />
-          <span className="text-blue-900">AHORA</span>
-        </h1>
-        <p className="text-md md:text-xl max-w-lg md:max-w-xl">
-          {searchQuery
-            ? `Resultados para: "${searchQuery}"`
-            : "Objetos seleccionados por su diseño y utilidad. Compra online, gestiona por WhatsApp y paga en casa."}
-        </p>
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 border-b border-black">
+        <div className="flex items-center justify-between gap-8">
+          <div className="flex-1">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-4 md:mb-6 leading-tight">
+              DISPONIBLE
+              <br />
+              <span className="text-blue-900">AHORA</span>
+            </h1>
+            <p className="text-md md:text-xl max-w-lg md:max-w-xl">
+              {searchQuery
+                ? `Resultados para: "${searchQuery}"`
+                : "Objetos seleccionados por su diseño y utilidad. Compra online, gestiona por WhatsApp y paga en casa."}
+            </p>
+          </div>
+          <div className="hidden md:block w-48 lg:w-64 flex-shrink-0">
+            <img
+              src="/PuntikoB&N.png"
+              alt="EL PUNTIKO."
+              className="w-full h-auto object-contain"
+            />
+          </div>
+        </div>
       </section>
 
       {!searchQuery && (

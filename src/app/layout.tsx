@@ -6,6 +6,15 @@ import { CurrencyProvider } from "@/providers/CurrencyProvider";
 export const metadata: Metadata = {
   title: "EL PUNTIKO.",
   description: "Tienda online - Pago contra reembolso",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon1.png",
+  },
+  openGraph: {
+    title: "EL PUNTIKO.",
+    description: "Tienda online - Pago contra reembolso",
+    images: ["/favicon1.png"],
+  },
   other: {
     "googlebot": "notranslate",
   },
