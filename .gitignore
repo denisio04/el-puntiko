@@ -9,4 +9,4 @@ prisma/*.db
 prisma/*.db-journal
 *.md
 tsconfig.tsbuildinfo
-public/uploads/*.png
+public/uploads/
