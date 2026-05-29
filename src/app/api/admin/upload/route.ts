@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { requireAdmin, adminUnauthorized } from "@/lib/adminAuth";
 import { supabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase";
 import { optimizeImage } from "@/lib/imageOptimizer";
+import fs from "fs/promises";
+import path from "path";
 
 export const dynamic = 'force-dynamic';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+
+const isDev = process.env.NODE_ENV === "development";
 
 export async function POST(request: Request) {
   const auth = await requireAdmin();
@@ -34,6 +38,30 @@ export async function POST(request: Request) {
     const optimized = await optimizeImage(originalBuffer);
 
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+
+    if (isDev) {
+      // Local: guardar en public/uploads/
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      await fs.mkdir(uploadsDir, { recursive: true });
+      const filePath = path.join(uploadsDir, fileName);
+      await fs.writeFile(filePath, optimized.buffer);
+      const url = `/uploads/${fileName}`;
+
+      return NextResponse.json({
+        success: true,
+        url,
+        optimized: {
+          format: optimized.format,
+          width: optimized.width,
+          height: optimized.height,
+          originalSize: file.size,
+          optimizedSize: optimized.size,
+          savingPercent: Math.round((1 - optimized.size / file.size) * 100),
+        },
+      });
+    }
+
+    // Producción: subir a Supabase
     const filePath = `products/${fileName}`;
 
     const { error: uploadError } = await supabaseAdmin.storage

@@ -89,6 +89,7 @@ export function ImageUpload({ currentImage, onImageUrl }: ImageUploadProps) {
             alt="Preview"
             fill
             className="object-contain"
+            unoptimized={preview.startsWith("blob:")}
           />
           <button
             type="button"
