@@ -160,7 +160,7 @@ export default function HomePage() {
           </div>
           <div className="hidden md:block w-48 lg:w-64 flex-shrink-0">
             <img
-              src="/PuntikoB&N.png"
+              src="/logo-app.png"
               alt="EL PUNTIKO."
               className="w-full h-auto object-contain"
             />

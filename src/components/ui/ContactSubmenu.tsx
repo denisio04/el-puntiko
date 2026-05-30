@@ -14,7 +14,7 @@ export function ContactSubmenu({ contactNumber, onBack }: ContactSubmenuProps) {
   const handleCopy = async (index: number) => {
     if (!contactNumber) return;
     try {
-      await navigator.clipboard.writeText(`+53${contactNumber}`);
+      await navigator.clipboard.writeText(`+${contactNumber}`);
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 1500);
     } catch {}
@@ -49,12 +49,12 @@ export function ContactSubmenu({ contactNumber, onBack }: ContactSubmenuProps) {
     {
       icon: <Phone className="w-4 h-4" />,
       label: "Llamar",
-      href: `tel:+53${contactNumber}`,
+      href: `tel:+${contactNumber}`,
     },
     {
       icon: <MessageSquare className="w-4 h-4" />,
       label: "Mensaje",
-      href: `sms:+53${contactNumber}`,
+      href: `sms:+${contactNumber}`,
     },
     {
       icon: <MessageCircle className="w-4 h-4" />,
