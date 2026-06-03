@@ -116,7 +116,18 @@ export async function PUT(request: NextRequest) {
     if (usdToCupRate !== undefined) updateData.usdToCupRate = usdToCupRate;
     if (zelleToCupRate !== undefined) updateData.zelleToCupRate = zelleToCupRate;
     if (contactStaffId !== undefined) updateData.contactStaffId = contactStaffId || null;
-    if (contactPhone !== undefined) updateData.contactPhone = contactPhone || null;
+
+    if (contactStaffId) {
+      const staffUser = await prisma.user.findUnique({
+        where: { id: contactStaffId },
+        select: { phone: true },
+      });
+      if (staffUser?.phone) {
+        updateData.contactPhone = staffUser.phone;
+      }
+    } else if (contactPhone !== undefined) {
+      updateData.contactPhone = contactPhone || null;
+    }
 
     const settings = await prisma.settings.upsert({
       where: { id: "global" },
