@@ -21,7 +21,8 @@ function ThankYouContent() {
   const whatsappMessage = encodeURIComponent(
     `Hola, mi pedido ${orderNumber ? `#${orderNumber}` : ""} fue confirmado. ¿Cuándo realizan la entrega?`
   );
-  const whatsappUrl = `https://wa.me/${contactPhone}?text=${whatsappMessage}`;
+  const cleanPhone = contactPhone.replace(/[^0-9]/g, "");
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${whatsappMessage}&type=phone_number&app_absent=0`;
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-24 text-center">

@@ -211,7 +211,8 @@ export default function CheckoutPage() {
         message += `\n*Referido:* ${referralCode}\n`;
       }
 
-      const whatsappUrl = `https://wa.me/${contactPhone}?text=${encodeURIComponent(message)}`;
+      const cleanPhone = contactPhone.replace(/[^0-9]/g, "");
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
       window.open(whatsappUrl, "_blank");
 
       clearCart();
