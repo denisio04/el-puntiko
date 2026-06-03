@@ -21,7 +21,7 @@ import { useSession } from "next-auth/react";
 import { useCurrency } from "@/hooks/useCurrency";
 import { convertPrice, formatConvertedPrice } from "@/lib/currency";
 
-const WHATSAPP_NUMBER = "5356659558";
+const FALLBACK_WHATSAPP = "5355417265";
 
 interface BonusProgress {
   hasReached: boolean;
@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [notes, setNotes] = useState("");
   const [bonus, setBonus] = useState<BonusProgress | null>(null);
+  const [contactPhone, setContactPhone] = useState(FALLBACK_WHATSAPP);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -61,6 +62,13 @@ export default function CheckoutPage() {
         }
       })
       .catch((e) => console.error("Bonus fetch error:", e));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings/contact")
+      .then((r) => (r.ok ? r.json() : { phone: FALLBACK_WHATSAPP }))
+      .then((data) => setContactPhone(data.phone))
+      .catch(() => setContactPhone(FALLBACK_WHATSAPP));
   }, []);
 
   const isLoggedIn = status === "authenticated";
@@ -122,13 +130,17 @@ export default function CheckoutPage() {
         fetch("/api/cart/reserve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: [{ productId: itemId, quantity: diff }] }),
+          body: JSON.stringify({
+            items: [{ productId: itemId, quantity: diff }],
+          }),
         }).catch(() => {});
       } else {
         fetch("/api/cart/reserve", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: [{ productId: itemId, quantity: Math.abs(diff) }] }),
+          body: JSON.stringify({
+            items: [{ productId: itemId, quantity: Math.abs(diff) }],
+          }),
         }).catch(() => {});
       }
     }
@@ -199,7 +211,7 @@ export default function CheckoutPage() {
         message += `\n*Referido:* ${referralCode}\n`;
       }
 
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = `https://wa.me/${contactPhone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
 
       clearCart();
@@ -372,8 +384,12 @@ export default function CheckoutPage() {
                   {bonus && bonus.hasReached && item.isBonusProduct && (
                     <p className="text-xs text-green-600">
                       {formatConvertedPrice(
-                        convertPrice(item.price * (1 - bonus.discountPercent), preferredCurrency, rates),
-                        preferredCurrency
+                        convertPrice(
+                          item.price * (1 - bonus.discountPercent),
+                          preferredCurrency,
+                          rates,
+                        ),
+                        preferredCurrency,
                       )}{" "}
                       c/u
                     </p>
@@ -388,9 +404,9 @@ export default function CheckoutPage() {
                             ? item.price * (1 - bonus.discountPercent)
                             : item.price * item.quantity,
                           preferredCurrency,
-                          rates
+                          rates,
                         ),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </p>
                     <button
@@ -402,7 +418,9 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex items-center gap-0">
                     <button
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item.id, item.quantity - 1)
+                      }
                       disabled={item.isBonusProduct}
                       className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
                     >
@@ -412,7 +430,9 @@ export default function CheckoutPage() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item.id, item.quantity + 1)
+                      }
                       disabled={item.isBonusProduct}
                       className={`p-1.5 border border-black ${item.isBonusProduct ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "hover:bg-black hover:text-white"}`}
                     >
@@ -430,7 +450,7 @@ export default function CheckoutPage() {
                     <span className="line-through">
                       {formatConvertedPrice(
                         convertPrice(subtotal, preferredCurrency, rates),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </span>
                   </div>
@@ -439,9 +459,10 @@ export default function CheckoutPage() {
                       Descuento {Math.round(bonus.discountPercent * 100)}%
                     </span>
                     <span>
-                      -{formatConvertedPrice(
+                      -
+                      {formatConvertedPrice(
                         convertPrice(discountAmount, preferredCurrency, rates),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </span>
                   </div>
@@ -450,7 +471,7 @@ export default function CheckoutPage() {
                     <span>
                       {formatConvertedPrice(
                         convertPrice(total, preferredCurrency, rates),
-                        preferredCurrency
+                        preferredCurrency,
                       )}
                     </span>
                   </div>
@@ -461,7 +482,7 @@ export default function CheckoutPage() {
                   <span>
                     {formatConvertedPrice(
                       convertPrice(total, preferredCurrency, rates),
-                      preferredCurrency
+                      preferredCurrency,
                     )}
                   </span>
                 </div>

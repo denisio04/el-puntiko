@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MessageCircle, Check } from "lucide-react";
 import Button from "@/components/ui/Button";
@@ -9,11 +9,19 @@ import Link from "next/link";
 function ThankYouContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("order");
+  const [contactPhone, setContactPhone] = useState("5355417265");
+
+  useEffect(() => {
+    fetch("/api/settings/contact")
+      .then((r) => (r.ok ? r.json() : { phone: "5355417265" }))
+      .then((data) => setContactPhone(data.phone))
+      .catch(() => {});
+  }, []);
 
   const whatsappMessage = encodeURIComponent(
     `Hola, mi pedido ${orderNumber ? `#${orderNumber}` : ""} fue confirmado. ¿Cuándo realizan la entrega?`
   );
-  const whatsappUrl = `https://wa.me/5370000000?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/${contactPhone}?text=${whatsappMessage}`;
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-24 text-center">
