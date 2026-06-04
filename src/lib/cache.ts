@@ -1,14 +1,13 @@
-import { cache } from "react";
 import { prisma } from "./db";
 
-export const getCachedCategories = cache(async () => {
+export async function getCachedCategories() {
   return prisma.category.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },
   });
-});
+}
 
-export const getCachedProducts = cache(async (search?: string, category?: string) => {
+export async function getCachedProducts(search?: string, category?: string) {
   const where: Record<string, unknown> = { isActive: true };
   if (search) {
     const isPostgres = process.env.DATABASE_URL?.startsWith("postgresql");
@@ -23,8 +22,8 @@ export const getCachedProducts = cache(async (search?: string, category?: string
   }
   if (category) where.category = category;
   return prisma.product.findMany({ where, orderBy: { createdAt: "desc" } });
-});
+}
 
-export const getCachedExchangeRates = cache(async () => {
+export async function getCachedExchangeRates() {
   return prisma.settings.findUnique({ where: { id: "global" } });
-});
+}
