@@ -51,7 +51,9 @@ export async function GET(request: NextRequest) {
       availableStock: computeAvailableStock(p.stock, reservedCounts, p.id),
     }));
 
-    return NextResponse.json(result);
+    const response = NextResponse.json(result);
+    response.headers.set("Cache-Control", "public, s-maxage=10, stale-while-revalidate=30");
+    return response;
   } catch {
     return NextResponse.json(
       { error: "Error fetching products" },

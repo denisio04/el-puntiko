@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const categories = await getCachedCategories();
     const response = NextResponse.json(categories);
-    response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    response.headers.set("Cache-Control", "public, s-maxage=10, stale-while-revalidate=30");
     return response;
   } catch {
     return NextResponse.json(

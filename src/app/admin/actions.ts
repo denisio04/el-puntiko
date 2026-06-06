@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 
 export async function getAdminWallet() {
@@ -769,6 +770,10 @@ export async function createProduct(data: {
     },
   });
 
+  revalidatePath("/");
+  revalidatePath("/productos");
+  revalidatePath("/categoria/[category]", "page");
+
   return { product: { ...product, createdAt: product.createdAt.toISOString() } };
 }
 
@@ -796,6 +801,10 @@ export async function updateProduct(id: string, data: {
     data,
   });
 
+  revalidatePath("/");
+  revalidatePath("/productos");
+  revalidatePath("/categoria/[category]", "page");
+
   return { product };
 }
 
@@ -807,6 +816,10 @@ export async function deleteProduct(id: string) {
   }
 
   await prisma.product.delete({ where: { id } });
+
+  revalidatePath("/");
+  revalidatePath("/productos");
+  revalidatePath("/categoria/[category]", "page");
 
   return { success: true };
 }
@@ -850,6 +863,10 @@ export async function createCategory(data: { name: string; slug: string; image?:
 
   const category = await prisma.category.create({ data });
 
+  revalidatePath("/");
+  revalidatePath("/productos");
+  revalidatePath("/categoria/[category]", "page");
+
   return { category: { ...category, createdAt: category.createdAt.toISOString() } };
 }
 
@@ -862,6 +879,10 @@ export async function updateCategory(id: string, data: { name?: string; slug?: s
 
   const category = await prisma.category.update({ where: { id }, data });
 
+  revalidatePath("/");
+  revalidatePath("/productos");
+  revalidatePath("/categoria/[category]", "page");
+
   return { category };
 }
 
@@ -873,6 +894,10 @@ export async function deleteCategory(id: string) {
   }
 
   await prisma.category.delete({ where: { id } });
+
+  revalidatePath("/");
+  revalidatePath("/productos");
+  revalidatePath("/categoria/[category]", "page");
 
   return { success: true };
 }
